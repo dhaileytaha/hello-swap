@@ -7,8 +7,8 @@
 import { HelloSwap } from "./helloSwap";
 
 async function startMaker() {
-  const maker = new HelloSwap("http://localhost:8000/");
-  console.log("Maker started:", await maker.cndPeerId());
+    const maker = new HelloSwap("http://localhost:8000/");
+    console.log("Maker started:", await maker.cndPeerId());
 }
 
 startMaker();

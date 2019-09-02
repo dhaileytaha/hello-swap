@@ -5,13 +5,13 @@ import { Cnd } from "./cnd";
  * Can initiate a swap request.
  */
 export class HelloSwap {
-  private readonly cnd: Cnd;
+    private readonly cnd: Cnd;
 
-  public constructor(cndUrl: string) {
-    this.cnd = new Cnd(cndUrl);
-  }
+    public constructor(cndUrl: string) {
+        this.cnd = new Cnd(cndUrl);
+    }
 
-  public cndPeerId(): Promise<string> {
-    return this.cnd.getPeerId();
-  }
+    public cndPeerId(): Promise<string> {
+        return this.cnd.getPeerId();
+    }
 }

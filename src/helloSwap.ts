@@ -16,7 +16,11 @@ export class HelloSwap {
         return this.cnd.getPeerId();
     }
 
-    public sendSwap(peerId: string, multiAddress: string) {
+    public sendSwap(
+        peerId: string,
+        multiAddress: string,
+        receivingAccount: string
+    ) {
         const swap = {
             alpha_ledger: {
                 name: "bitcoin",
@@ -34,8 +38,7 @@ export class HelloSwap {
                 name: "ether",
                 quantity: "9000000000000000000",
             },
-            beta_ledger_redeem_identity:
-                "0x965e564002ea5c4f69fe4755b5912d1039f9a94e",
+            beta_ledger_redeem_identity: receivingAccount,
             alpha_expiry: moment().unix() + 7200,
             beta_expiry: moment().unix() + 3600,
             peer: {

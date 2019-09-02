@@ -12,12 +12,21 @@ import { HelloSwap } from "./helloSwap";
 async function startMaker() {
     const maker = new HelloSwap("http://localhost:8000/");
     console.log("Maker started:", await maker.cndPeerId());
+    return maker;
 }
 
 async function startTaker() {
     const taker = new HelloSwap("http://localhost:8001/");
     console.log("Taker started:", await taker.cndPeerId());
+    return taker;
 }
 
-startMaker();
-startTaker();
+async function main() {
+    const maker = await startMaker();
+    const taker = await startTaker();
+
+    maker.sendSwap(await taker.cndPeerId(), "/ip4/127.0.0.1/tcp/9940");
+    console.log("Swap request sent!");
+}
+
+main();

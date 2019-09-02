@@ -14,4 +14,10 @@ async function startMaker() {
     console.log("Maker started:", await maker.cndPeerId());
 }
 
+async function startTaker() {
+    const taker = new HelloSwap("http://localhost:8001/");
+    console.log("Taker started:", await taker.cndPeerId());
+}
+
 startMaker();
+startTaker();

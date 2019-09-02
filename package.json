@@ -11,15 +11,21 @@
     "start-dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./src/index.ts",
     "fix": "tslint -p . --fix && prettier --write '**/*.{ts,js,json,yml}'",
     "lint": "tslint -p .",
-    "prettier": "prettier --check '**/*.{ts,js,json,yml}'",
+    "prettier": "prettier --check '**/*.{ts,js,json,yml}'"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "json-schema-to-typescript": "^7.0.0",
+    "nodemon": "^1.19.1",
     "prettier": "^1.18.2",
+    "ts-node": "^8.3.0",
     "tslint": "^5.19.0",
-    "tslint-config-prettier": "^1.18.0"
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.6.2"
+  },
+  "dependencies": {
+    "axios": "^0.19.0"
   }
 }

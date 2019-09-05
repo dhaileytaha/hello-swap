@@ -7,6 +7,7 @@
  * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
  */
 
+import delay from "delay";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 
@@ -27,6 +28,7 @@ async function main() {
     const taker = await startTaker();
 
     const makerEthereumWallet = new EthereumWallet();
+    const takerEthereumWallet = new EthereumWallet();
 
     maker.sendSwap(
         await taker.cndPeerId(),
@@ -34,6 +36,11 @@ async function main() {
         makerEthereumWallet.getAccount()
     );
     console.log("Swap request sent!");
+
+    await delay(1000);
+
+    taker.acceptSwap(takerEthereumWallet.getAccount());
+    console.log("Swap request accepted!");
 }
 
 main();

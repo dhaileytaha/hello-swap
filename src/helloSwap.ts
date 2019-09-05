@@ -49,4 +49,13 @@ export class HelloSwap {
 
         return this.cnd.postSwap(swap);
     }
+
+    public async acceptSwap(refundAccount: string) {
+        const swaps = await this.cnd.getSwaps();
+        const swap = swaps[0];
+        const actions = swap.actions;
+        const acceptAction = actions!.find(action => action.name === "accept");
+
+        return this.cnd.postAccept(acceptAction!, refundAccount);
+    }
 }

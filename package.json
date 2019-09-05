@@ -6,7 +6,7 @@
     "scripts": {
         "postinstall": "git config core.hooksPath .githooks; yarn run gen",
         "check": "tsc",
-        "gen": "mkdir -p ./gen && json2ts -i ./schema/siren.schema.json -o ./gen/siren.d.ts",
+        "gen": "mkdir -p ./gen && json2ts -i ./schema/siren.schema.json -o ./gen/siren.d.ts && json2ts -i ./schema/swap.schema.json -o ./gen/swap.d.ts",
         "start": "ts-node -- ./src/index.ts",
         "start-dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./src/index.ts",
         "fix": "tslint -p . --fix && prettier --write '**/*.{ts,js,json,yml}'",
@@ -26,10 +26,14 @@
         "typescript": "^3.6.2"
     },
     "dependencies": {
+        "@types/urijs": "^1.19.3",
         "axios": "^0.19.0",
         "bcoin": "https://github.com/bcoin-org/bcoin.git#75722469f3a3963bb2163bbc4edc763e6bdcf55f",
         "bitcoin-core": "^2.2.0",
-        "moment": "^2.24.0"
+        "delay": "^4.3.0",
+        "ethers": "^4.0.36",
+        "moment": "^2.24.0",
+        "urijs": "^1.19.1"
     },
     "prettier": {
         "trailingComma": "es5",

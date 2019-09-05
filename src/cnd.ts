@@ -1,4 +1,6 @@
 import axios from "axios";
+import URI from "urijs";
+import { Action, EmbeddedRepresentationSubEntity, Entity } from "../gen/siren";
 
 interface GetInfo {
     id: string;
@@ -36,10 +38,10 @@ export interface SwapRequest {
  * Facilitates access to the cnd REST API
  */
 export class Cnd {
-    private readonly cndUrl: string;
+    private readonly cndUrl: uri.URI;
 
     public constructor(cndUrl: string) {
-        this.cndUrl = cndUrl;
+        this.cndUrl = new URI(cndUrl);
     }
 
     public async getPeerId(): Promise<string> {
@@ -48,11 +50,23 @@ export class Cnd {
     }
 
     public postSwap(swap: SwapRequest): Promise<string> {
-        return axios.post(this.cndUrl + "swaps/rfc003", swap);
+        return axios.post(this.cndUrl.path("swaps/rfc003").toString(), swap);
+    }
+
+    public async getSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {
+        const response = await axios.get(this.cndUrl.path("swaps").toString());
+        const entity = response.data as Entity;
+        return entity.entities as EmbeddedRepresentationSubEntity[];
+    }
+
+    public async postAccept(acceptAction: Action, refundAccount: string) {
+        axios.post(this.cndUrl.path(acceptAction.href).toString(), {
+            beta_ledger_refund_identity: refundAccount,
+        });
     }
 
     private async getInfo(): Promise<GetInfo> {
-        const response = await axios.get(this.cndUrl);
+        const response = await axios.get(this.cndUrl.toString());
         return response.data;
     }
 }

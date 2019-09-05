@@ -10,7 +10,9 @@
  */
 
 import Network from "bcoin/lib/protocol/network";
+import delay from "delay";
 import { BitcoinWallet } from "./bitcoinWallet";
+import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 import { setupBitcoin } from "./setup/setup";
 
@@ -46,8 +48,20 @@ async function main() {
     const maker = await startMaker();
     const taker = await startTaker();
 
-    await maker.sendSwap(await taker.cndPeerId(), "/ip4/127.0.0.1/tcp/9940");
+    const makerEthereumWallet = new EthereumWallet();
+    const takerEthereumWallet = new EthereumWallet();
+
+    await maker.sendSwap(
+        await taker.cndPeerId(),
+        "/ip4/127.0.0.1/tcp/9940",
+        makerEthereumWallet.getAccount()
+    );
     console.log("Swap request sent!");
+
+    await delay(1000);
+
+    taker.acceptSwap(takerEthereumWallet.getAccount());
+    console.log("Swap request accepted!");
 }
 
 main();

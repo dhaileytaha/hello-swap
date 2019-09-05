@@ -1,3 +1,5 @@
+/// <reference path="./bcoin.d.ts" />
+
 /** Orchestrate the hello swap apps
  * Start 2 instances of helloSwap
  * "Link" them together. eg extract PeerId etc.
@@ -7,7 +9,12 @@
  * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
  */
 
+import Network from "bcoin/lib/protocol/network";
+import { BitcoinWallet } from "./bitcoinWallet";
 import { HelloSwap } from "./helloSwap";
+import { setupBitcoin } from "./setup/setup";
+
+const regtest = Network.get("regtest");
 
 async function startMaker() {
     const maker = new HelloSwap("http://localhost:8000/");
@@ -22,10 +29,24 @@ async function startTaker() {
 }
 
 async function main() {
+    const makerBitcoinWallet = new BitcoinWallet(regtest);
+    await makerBitcoinWallet.init();
+
+    await setupBitcoin(await makerBitcoinWallet.getAddress(), 2); // We may decide to do that separately.
+
+    console.log(
+        "Maker Bitcoin Address:",
+        await makerBitcoinWallet.getAddress()
+    );
+    console.log(
+        "Maker Bitcoin Balance:",
+        await makerBitcoinWallet.getBalance()
+    );
+
     const maker = await startMaker();
     const taker = await startTaker();
 
-    maker.sendSwap(await taker.cndPeerId(), "/ip4/127.0.0.1/tcp/9940");
+    await maker.sendSwap(await taker.cndPeerId(), "/ip4/127.0.0.1/tcp/9940");
     console.log("Swap request sent!");
 }
 

@@ -6,7 +6,7 @@
     "scripts": {
         "postinstall": "git config core.hooksPath .githooks; yarn run gen",
         "check": "tsc",
-        "gen": "mkdir -p ./gen && json2ts -i ./schema/siren.schema.json -o ./gen/siren.d.ts && json2ts -i ./schema/swap.schema.json -o ./gen/swap.d.ts",
+        "gen": "mkdir -p ./gen && json2ts -i ./schema/siren.schema.json -o ./gen/siren.d.ts",
         "start": "ts-node -- ./src/index.ts",
         "start-dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./src/index.ts",
         "fix": "tslint -p . --fix && prettier --write '**/*.{ts,js,json,yml}'",

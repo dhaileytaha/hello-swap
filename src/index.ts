@@ -11,36 +11,40 @@ import delay from "delay";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 
-async function startMaker() {
-    const maker = new HelloSwap("http://localhost:8000/");
-    console.log("Maker started:", await maker.cndPeerId());
+async function startMaker(ethereumAddress: string) {
+    const maker = new HelloSwap("http://localhost:8000/", ethereumAddress);
+    console.log("[maker] started:", await maker.cndPeerId());
     return maker;
 }
 
-async function startTaker() {
-    const taker = new HelloSwap("http://localhost:8001/");
-    console.log("Taker started:", await taker.cndPeerId());
+async function startTaker(ethereumAddress: string) {
+    const taker = new HelloSwap("http://localhost:8001/", ethereumAddress);
+    console.log("[taker] started:", await taker.cndPeerId());
     return taker;
 }
 
-async function main() {
-    const maker = await startMaker();
-    const taker = await startTaker();
-
+(async function main() {
     const makerEthereumWallet = new EthereumWallet();
     const takerEthereumWallet = new EthereumWallet();
 
-    maker.sendSwap(
+    const taker = await startTaker(takerEthereumWallet.getAccount());
+    const maker = await startMaker(makerEthereumWallet.getAccount());
+
+    await maker.makeOfferSellBtcBuyEth(
+        "100000000",
+        "9000000000000000000",
         await taker.cndPeerId(),
-        "/ip4/127.0.0.1/tcp/9940",
-        makerEthereumWallet.getAccount()
+        "/ip4/127.0.0.1/tcp/9940"
     );
-    console.log("Swap request sent!");
+    console.log("[maker] Offer sent!");
 
     await delay(1000);
 
-    taker.acceptSwap(takerEthereumWallet.getAccount());
-    console.log("Swap request accepted!");
-}
+    const newSwaps = await taker.getNewSwaps();
+    console.log(`[taker] ${newSwaps.length} new swaps waiting for a decision`);
 
-main();
+    const swapToAccept = newSwaps[0];
+    await taker.acceptSwap(swapToAccept);
+
+    console.log("[taker] Swap request accepted!", JSON.stringify(swapToAccept));
+})();

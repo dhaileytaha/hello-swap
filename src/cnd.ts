@@ -65,6 +65,16 @@ export class Cnd {
         });
     }
 
+    public async getSwap(id: string): Promise<EmbeddedRepresentationSubEntity> {
+        const response = await axios.get(
+            this.cndUrl
+                .path("swaps/rfc003/")
+                .segment(id)
+                .toString()
+        );
+        return response.data as EmbeddedRepresentationSubEntity;
+    }
+
     private async getInfo(): Promise<GetInfo> {
         const response = await axios.get(this.cndUrl.toString());
         return response.data;

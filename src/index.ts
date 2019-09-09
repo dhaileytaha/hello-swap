@@ -12,13 +12,21 @@ import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 
 async function startMaker(ethereumAddress: string) {
-    const maker = new HelloSwap("http://localhost:8000/", ethereumAddress);
+    const maker = new HelloSwap(
+        "http://localhost:8000/",
+        ethereumAddress,
+        "maker"
+    );
     console.log("[maker] started:", await maker.cndPeerId());
     return maker;
 }
 
 async function startTaker(ethereumAddress: string) {
-    const taker = new HelloSwap("http://localhost:8001/", ethereumAddress);
+    const taker = new HelloSwap(
+        "http://localhost:8001/",
+        ethereumAddress,
+        "taker"
+    );
     console.log("[taker] started:", await taker.cndPeerId());
     return taker;
 }
@@ -41,7 +49,9 @@ async function startTaker(ethereumAddress: string) {
     await delay(1000);
 
     const newSwaps = await taker.getNewSwaps();
-    console.log(`[taker] ${newSwaps.length} new swaps waiting for a decision`);
+    console.log(
+        `[taker] ${newSwaps.length} new swap(s) waiting for a decision`
+    );
 
     const swapToAccept = newSwaps[0];
     await taker.acceptSwap(swapToAccept);

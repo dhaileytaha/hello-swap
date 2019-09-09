@@ -23,10 +23,16 @@ export interface Swap {
 export class HelloSwap {
     private readonly cnd: Cnd;
     private readonly ethereumAddress: string;
+    private readonly whoAmI: string;
 
-    public constructor(cndUrl: string, ethereumAddress: string) {
+    public constructor(
+        cndUrl: string,
+        ethereumAddress: string,
+        whoAmI: string
+    ) {
         this.cnd = new Cnd(cndUrl);
         this.ethereumAddress = ethereumAddress;
+        this.whoAmI = whoAmI;
 
         // On an interval, get all swaps that can be funded or redeemed
         // and perform the corresponding action using a wallet
@@ -111,23 +117,22 @@ export class HelloSwap {
 
     // @ts-ignore: called dynamically
     private doBitcoinSendAmountToAddress(payload: any) {
-        console.log("Do bitcoin send amount to address");
-        console.log("unimplemented!");
+        console.log("Do bitcoin-send-amount-to-address");
     }
 
     // @ts-ignore: called dynamically
     private doBitcoinBroadcastSignedTransaction(payload: any) {
-        console.log("unimplemented!");
+        console.log("Do bitcoin-broadcast-sigend-transaction");
     }
 
     // @ts-ignore: called dynamically
     private doEthereumDeployContract(payload: any) {
-        console.log("unimplemented!");
+        console.log("Do ethereum-deploy-contract");
     }
 
     // @ts-ignore: called dynamically
     private doEthereumCallContract(payload: any) {
-        console.log("unimplemented!");
+        console.log("Do ethereum-call-contract");
     }
 
     private toSwap(entity: EmbeddedRepresentationSubEntity): Swap {
@@ -173,16 +178,23 @@ export class HelloSwap {
     private async performNextLedgerAction(
         entity: EmbeddedRepresentationSubEntity
     ) {
-        console.log(entity);
+        const swap = this.toSwap(entity);
 
-        const nextLedgerActionUrl = entity.actions!.find((action: Action) => {
-            console.log(action);
+        const action = entity.actions!.find((action: Action) => {
             return action.name === "fund" || action.name === "redeem";
-        })!.href;
+        })!;
 
         await this.cnd
-            .getAction(nextLedgerActionUrl)
+            .getAction(action.href)
             .then((ledgerAction: LedgerAction) => {
+                console.log(
+                    `[${this.whoAmI}] ${changeCase.titleCase(action.name)}ing ${
+                        action.name === "fund"
+                            ? swap.sellAsset.name
+                            : swap.buyAsset.name
+                    }`,
+                    JSON.stringify(swap)
+                );
                 this.doLedgerAction(ledgerAction);
             });
     }

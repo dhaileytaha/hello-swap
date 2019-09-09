@@ -34,6 +34,37 @@ export interface SwapRequest {
     peer: Peer;
 }
 
+export type LedgerAction =
+    | {
+          type: "bitcoin-send-amount-to-address";
+          payload: { to: string; amount: string; network: string };
+      }
+    | {
+          type: "bitcoin-broadcast-signed-transaction";
+          payload: {
+              hex: string;
+              network: string;
+          };
+      }
+    | {
+          type: "ethereum-deploy-contract";
+          payload: {
+              data: string;
+              amount: string;
+              gas_limit: string;
+              network: string;
+          };
+      }
+    | {
+          type: "ethereum-call-contract";
+          payload: {
+              contract_address: string;
+              data: string;
+              gas_limit: string;
+              network: string;
+          };
+      };
+
 /**
  * Facilitates access to the cnd REST API
  */
@@ -73,6 +104,12 @@ export class Cnd {
                 .toString()
         );
         return response.data as EmbeddedRepresentationSubEntity;
+    }
+
+    public async getAction(relativePath: string): Promise<LedgerAction> {
+        return axios
+            .get(this.cndUrl.path(relativePath).toString())
+            .then(response => response.data as LedgerAction);
     }
 
     private async getInfo(): Promise<GetInfo> {

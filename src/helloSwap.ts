@@ -1,7 +1,8 @@
+import changeCase from "change-case";
 import moment from "moment";
 import { Action, EmbeddedRepresentationSubEntity } from "../gen/siren";
 import { PropertiesOfASWAP } from "../gen/swap";
-import { Cnd } from "./cnd";
+import { Cnd, LedgerAction } from "./cnd";
 
 export interface Asset {
     name: string;
@@ -26,6 +27,19 @@ export class HelloSwap {
     public constructor(cndUrl: string, ethereumAddress: string) {
         this.cnd = new Cnd(cndUrl);
         this.ethereumAddress = ethereumAddress;
+
+        // On an interval, get all swaps that can be funded or redeemed
+        // and perform the corresponding action using a wallet
+
+        setInterval(() => {
+            this.getOngoingSwaps().then(
+                (swaps: EmbeddedRepresentationSubEntity[]) => {
+                    swaps.forEach((swap: EmbeddedRepresentationSubEntity) =>
+                        this.performNextLedgerAction(swap)
+                    );
+                }
+            );
+        }, 2000);
     }
 
     public cndPeerId(): Promise<string> {
@@ -78,30 +92,7 @@ export class HelloSwap {
                     })
                 );
             })
-            .map((entity: EmbeddedRepresentationSubEntity) => {
-                const swapProperties = entity.properties as PropertiesOfASWAP;
-                const buyAsset =
-                    swapProperties.role === "Alice"
-                        ? swapProperties.parameters.beta_asset
-                        : swapProperties.parameters.alpha_asset;
-                const sellAsset =
-                    swapProperties.role === "Alice"
-                        ? swapProperties.parameters.alpha_asset
-                        : swapProperties.parameters.beta_asset;
-
-                return {
-                    id: swapProperties.id,
-                    counterparty: swapProperties.counterparty,
-                    buyAsset: {
-                        name: buyAsset.name,
-                        quantity: buyAsset.quantity,
-                    },
-                    sellAsset: {
-                        name: sellAsset.name,
-                        quantity: sellAsset.quantity,
-                    },
-                };
-            });
+            .map(this.toSwap);
     }
 
     public async acceptSwap(swap: Swap) {
@@ -110,5 +101,89 @@ export class HelloSwap {
         const acceptAction = actions!.find(action => action.name === "accept");
 
         return this.cnd.postAccept(acceptAction!, this.ethereumAddress);
+    }
+
+    private doLedgerAction(action: LedgerAction) {
+        const type = changeCase.pascalCase(action.type);
+
+        (this as any)[`do${type}`](action.payload);
+    }
+
+    // @ts-ignore: called dynamically
+    private doBitcoinSendAmountToAddress(payload: any) {
+        console.log("Do bitcoin send amount to address");
+        console.log("unimplemented!");
+    }
+
+    // @ts-ignore: called dynamically
+    private doBitcoinBroadcastSignedTransaction(payload: any) {
+        console.log("unimplemented!");
+    }
+
+    // @ts-ignore: called dynamically
+    private doEthereumDeployContract(payload: any) {
+        console.log("unimplemented!");
+    }
+
+    // @ts-ignore: called dynamically
+    private doEthereumCallContract(payload: any) {
+        console.log("unimplemented!");
+    }
+
+    private toSwap(entity: EmbeddedRepresentationSubEntity): Swap {
+        const swapProperties = entity.properties as PropertiesOfASWAP;
+        const buyAsset =
+            swapProperties.role === "Alice"
+                ? swapProperties.parameters.beta_asset
+                : swapProperties.parameters.alpha_asset;
+        const sellAsset =
+            swapProperties.role === "Alice"
+                ? swapProperties.parameters.alpha_asset
+                : swapProperties.parameters.beta_asset;
+
+        return {
+            id: swapProperties.id,
+            counterparty: swapProperties.counterparty,
+            buyAsset: {
+                name: buyAsset.name,
+                quantity: buyAsset.quantity,
+            },
+            sellAsset: {
+                name: sellAsset.name,
+                quantity: sellAsset.quantity,
+            },
+        };
+    }
+
+    private async getOngoingSwaps(): Promise<
+        EmbeddedRepresentationSubEntity[]
+    > {
+        const swaps = await this.cnd.getSwaps();
+
+        return swaps.filter((swap: EmbeddedRepresentationSubEntity) => {
+            return (
+                swap.actions &&
+                !!swap.actions.find((action: Action) => {
+                    return action.name === "fund" || action.name === "redeem";
+                })
+            );
+        });
+    }
+
+    private async performNextLedgerAction(
+        entity: EmbeddedRepresentationSubEntity
+    ) {
+        console.log(entity);
+
+        const nextLedgerActionUrl = entity.actions!.find((action: Action) => {
+            console.log(action);
+            return action.name === "fund" || action.name === "redeem";
+        })!.href;
+
+        await this.cnd
+            .getAction(nextLedgerActionUrl)
+            .then((ledgerAction: LedgerAction) => {
+                this.doLedgerAction(ledgerAction);
+            });
     }
 }

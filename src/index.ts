@@ -9,14 +9,13 @@
  * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
  */
 
-import Network from "bcoin/lib/protocol/network";
 import delay from "delay";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 import { setupBitcoin } from "./setup/setup";
 
-const regtest = Network.get("regtest");
+const BITCOIND_P2P_URI = "127.0.0.1:18444";
 
 async function startMaker() {
     const maker = new HelloSwap("http://localhost:8000/");
@@ -30,9 +29,9 @@ async function startTaker() {
     return taker;
 }
 
-async function main() {
-    const makerBitcoinWallet = new BitcoinWallet(regtest);
-    await makerBitcoinWallet.init();
+(async function main() {
+    const makerBitcoinWallet = new BitcoinWallet("regtest");
+    await makerBitcoinWallet.init(BITCOIND_P2P_URI);
 
     await setupBitcoin(await makerBitcoinWallet.getAddress(), 2); // We may decide to do that separately.
 
@@ -56,12 +55,10 @@ async function main() {
         "/ip4/127.0.0.1/tcp/9940",
         makerEthereumWallet.getAccount()
     );
-    console.log("Swap request sent!");
+    console.log("[Maker] Swap request sent!");
 
     await delay(1000);
 
-    taker.acceptSwap(takerEthereumWallet.getAccount());
-    console.log("Swap request accepted!");
-}
-
-main();
+    await taker.acceptSwap(takerEthereumWallet.getAccount());
+    console.log("[Taker] Swap request accepted!");
+})();

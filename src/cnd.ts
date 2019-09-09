@@ -59,8 +59,8 @@ export class Cnd {
         return entity.entities as EmbeddedRepresentationSubEntity[];
     }
 
-    public async postAccept(acceptAction: Action, refundAccount: string) {
-        axios.post(this.cndUrl.path(acceptAction.href).toString(), {
+    public postAccept(acceptAction: Action, refundAccount: string) {
+        return axios.post(this.cndUrl.path(acceptAction.href).toString(), {
             beta_ledger_refund_identity: refundAccount,
         });
     }

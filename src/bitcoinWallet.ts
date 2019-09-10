@@ -14,7 +14,7 @@ export class BitcoinWallet {
 
     constructor(network: string) {
         this.logger = new Logger({
-            level: "debug",
+            level: "warning",
         });
         this.walletdb = new WalletDB({
             network,
@@ -45,18 +45,15 @@ export class BitcoinWallet {
         this.node.startSync();
 
         this.node.on("tx", (tx: any) => {
-            console.log("Received TX:\n", tx);
             this.walletdb.addTX(tx);
         });
 
         this.node.on("block", (block: any) => {
-            console.log("Received Block:\n", block);
             this.walletdb.addBlock(block);
 
             if (block.txs.length > 0) {
                 block.txs.forEach((tx: any) => {
                     this.walletdb.addTX(tx);
-                    console.log("TX added to wallet DB!");
                 });
             }
         });

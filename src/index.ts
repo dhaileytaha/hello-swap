@@ -1,3 +1,5 @@
+/// <reference path="./bcoin.d.ts" />
+
 /** Orchestrate the hello swap apps
  * Start 2 instances of helloSwap
  * "Link" them together. eg extract PeerId etc.
@@ -8,8 +10,12 @@
  */
 
 import delay from "delay";
+import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
+import { setupBitcoin } from "./setup/setup";
+
+const BITCOIND_P2P_URI = "127.0.0.1:18444";
 
 async function startMaker(ethereumAddress: string) {
     const maker = new HelloSwap(
@@ -32,6 +38,11 @@ async function startTaker(ethereumAddress: string) {
 }
 
 (async function main() {
+    const makerBitcoinWallet = new BitcoinWallet("regtest");
+    await makerBitcoinWallet.init(BITCOIND_P2P_URI);
+
+    await setupBitcoin(await makerBitcoinWallet.getAddress(), 2); // We may decide to do that separately.
+
     const makerEthereumWallet = new EthereumWallet();
     const takerEthereumWallet = new EthereumWallet();
 

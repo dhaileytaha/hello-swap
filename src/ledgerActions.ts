@@ -5,6 +5,7 @@
 //   doEthereumCallContract: (payload: any) => Promise<any>;
 // }
 
+import { BigNumber } from "ethers/utils";
 import { BitcoinWallet } from "./bitcoinWallet";
 import {
     BitcoinBroadcastSignedTransactionPayload,
@@ -45,9 +46,13 @@ export default class LedgerActionHandler {
         console.log("Do bitcoin-broadcast-sigend-transaction");
     }
 
-    // @ts-ignore
     public doEthereumDeployContract(payload: EthereumDeployContractPayload) {
-        console.log("Do ethereum-deploy-contract");
+        const value = new BigNumber(payload.amount);
+        return this.ethereum.deployContract(
+            payload.data,
+            value,
+            payload.gas_limit
+        );
     }
 
     // @ts-ignore

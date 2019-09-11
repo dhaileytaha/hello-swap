@@ -26,7 +26,10 @@ async function startMaker() {
     {
         await new Promise(r => setTimeout(r, 20000));
         const balance = await bitcoinWallet.getBalance();
-        console.log("[maker] Bitcoin balance:", balance.toJSON());
+        console.log(
+            "[maker] Bitcoin balance:",
+            JSON.stringify(balance.toJSON())
+        );
     }
     const ethereumWallet = new EthereumWallet();
 
@@ -41,7 +44,7 @@ async function startMaker() {
         "maker",
         ledgerActionHandler
     );
-    console.log("[maker] started:", await maker.cndPeerId());
+    console.log("[maker] Started:", await maker.cndPeerId());
     return maker;
 }
 
@@ -61,20 +64,18 @@ async function startTaker() {
         "taker",
         ledgerActionHandler
     );
-    console.log("[taker] started:", await taker.cndPeerId());
+    console.log("[taker] Started:", await taker.cndPeerId());
     return taker;
 }
 
 (async function main() {
     const taker = await startTaker();
     const maker = await startMaker();
-    const takerPeerId = await taker.cndPeerId();
-    console.log("Taker peer id:", takerPeerId);
 
     await maker.makeOfferSellBtcBuyEth(
         "100000000",
         "9000000000000000000",
-        takerPeerId,
+        await taker.cndPeerId(),
         "/ip4/127.0.0.1/tcp/9940"
     );
     console.log("[maker] Offer sent!");
@@ -89,5 +90,5 @@ async function startTaker() {
     const swapToAccept = newSwaps[0];
     await taker.acceptSwap(swapToAccept);
 
-    console.log("[taker] Swap request accepted!", JSON.stringify(swapToAccept));
+    console.log("[taker] Swap request accepted!", swapToAccept.id);
 })();

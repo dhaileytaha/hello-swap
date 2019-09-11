@@ -27,7 +27,6 @@ export default class LedgerActionHandler {
     public doBitcoinSendAmountToAddress(
         payload: BitcoinSendAmountToAddressPayload
     ) {
-        console.log(JSON.stringify(payload));
         const sats = parseInt(payload.amount, 10);
         if (!sats && this.bitcoin.network !== payload.network) {
             throw new Error(

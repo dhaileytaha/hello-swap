@@ -64,10 +64,6 @@ export class BitcoinWallet {
             }
         });
 
-        this.wallet.on("balance", (balance: any) => {
-            console.log("Balance updated:\n", balance.toJSON());
-        });
-
         const netAddr = await this.pool.hosts.addNode(peerUri);
         const peer = this.pool.createOutbound(netAddr);
         this.pool.peers.add(peer);

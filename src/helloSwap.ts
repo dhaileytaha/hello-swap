@@ -22,10 +22,35 @@ export interface Swap {
  * Can initiate a swap request.
  */
 export class HelloSwap {
+    private static toSwap(entity: EmbeddedRepresentationSubEntity): Swap {
+        const swapProperties = entity.properties as PropertiesOfASWAP;
+        const buyAsset =
+            swapProperties.role === "Alice"
+                ? swapProperties.parameters.beta_asset
+                : swapProperties.parameters.alpha_asset;
+        const sellAsset =
+            swapProperties.role === "Alice"
+                ? swapProperties.parameters.alpha_asset
+                : swapProperties.parameters.beta_asset;
+
+        return {
+            id: swapProperties.id,
+            counterparty: swapProperties.counterparty,
+            buyAsset: {
+                name: buyAsset.name,
+                quantity: buyAsset.quantity,
+            },
+            sellAsset: {
+                name: sellAsset.name,
+                quantity: sellAsset.quantity,
+            },
+        };
+    }
     private readonly cnd: Cnd;
     private readonly ethereumAddress: string;
     private readonly whoAmI: string;
     private readonly ledgerActionHandler: any;
+    private actionsDone: string[];
 
     public constructor(
         cndUrl: string,
@@ -37,6 +62,7 @@ export class HelloSwap {
         this.ethereumAddress = ethereumAddress;
         this.whoAmI = whoAmI;
         this.ledgerActionHandler = ledgerActionHandler;
+        this.actionsDone = [];
 
         // On an interval, get all swaps that can be funded or redeemed
         // and perform the corresponding action using a wallet
@@ -62,7 +88,7 @@ export class HelloSwap {
         peerId: string,
         peerAddress: string
     ) {
-        console.log("Sending offer to:", peerId);
+        console.log("[maker] Sending offer to:", peerId);
         const swap = {
             alpha_ledger: {
                 name: "bitcoin",
@@ -103,7 +129,7 @@ export class HelloSwap {
                     })
                 );
             })
-            .map(this.toSwap);
+            .map(HelloSwap.toSwap);
     }
 
     public async acceptSwap(swap: Swap) {
@@ -114,35 +140,9 @@ export class HelloSwap {
         return this.cnd.postAccept(acceptAction!, this.ethereumAddress);
     }
 
-    private doLedgerAction(action: LedgerAction) {
+    private async doLedgerAction(action: LedgerAction) {
         const type = changeCase.pascalCase(action.type);
-
-        (this.ledgerActionHandler as any)[`do${type}`](action.payload);
-    }
-
-    private toSwap(entity: EmbeddedRepresentationSubEntity): Swap {
-        const swapProperties = entity.properties as PropertiesOfASWAP;
-        const buyAsset =
-            swapProperties.role === "Alice"
-                ? swapProperties.parameters.beta_asset
-                : swapProperties.parameters.alpha_asset;
-        const sellAsset =
-            swapProperties.role === "Alice"
-                ? swapProperties.parameters.alpha_asset
-                : swapProperties.parameters.beta_asset;
-
-        return {
-            id: swapProperties.id,
-            counterparty: swapProperties.counterparty,
-            buyAsset: {
-                name: buyAsset.name,
-                quantity: buyAsset.quantity,
-            },
-            sellAsset: {
-                name: sellAsset.name,
-                quantity: sellAsset.quantity,
-            },
-        };
+        return (this.ledgerActionHandler as any)[`do${type}`](action.payload);
     }
 
     private async getOngoingSwaps(): Promise<
@@ -160,27 +160,31 @@ export class HelloSwap {
         });
     }
 
-    private async performNextLedgerAction(
-        entity: EmbeddedRepresentationSubEntity
-    ) {
-        const swap = this.toSwap(entity);
+    private performNextLedgerAction(entity: EmbeddedRepresentationSubEntity) {
+        const swap = HelloSwap.toSwap(entity);
 
         const action = entity.actions!.find((action: Action) => {
             return action.name === "fund" || action.name === "redeem";
         })!;
 
-        await this.cnd
+        return this.cnd
             .getAction(action.href)
             .then((ledgerAction: LedgerAction) => {
-                console.log(
-                    `[${this.whoAmI}] ${changeCase.titleCase(action.name)}ing ${
-                        action.name === "fund"
-                            ? swap.sellAsset.name
-                            : swap.buyAsset.name
-                    }`,
-                    JSON.stringify(swap)
-                );
-                this.doLedgerAction(ledgerAction);
+                const stringAction = JSON.stringify(ledgerAction);
+                if (this.actionsDone.indexOf(stringAction) === -1) {
+                    this.actionsDone.push(stringAction);
+                    console.log(
+                        `[${this.whoAmI}] ${changeCase.titleCase(
+                            action.name
+                        )}ing ${
+                            action.name === "fund"
+                                ? swap.sellAsset.name
+                                : swap.buyAsset.name
+                        } for`,
+                        JSON.stringify(swap.id)
+                    );
+                    return this.doLedgerAction(ledgerAction);
+                }
             });
     }
 }

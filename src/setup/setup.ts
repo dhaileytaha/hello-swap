@@ -19,6 +19,8 @@ export async function setupBitcoin(fundAddress: string, fundAmount: number) {
     await bitcoinClient.generate(101);
     console.log("Funding", fundAddress, " with", fundAmount, "BTC");
     await bitcoinClient.sendToAddress(fundAddress, fundAmount);
-    await bitcoinClient.generate(1);
-    await new Promise(r => setTimeout(r, 1000));
+    await bitcoinClient.generate(2);
+    setInterval(() => {
+        bitcoinClient.generate(1);
+    }, 500);
 }

@@ -13,46 +13,68 @@ import delay from "delay";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
+import LedgerActionHandler from "./ledgerActions";
 import { setupBitcoin } from "./setup/setup";
 
 const BITCOIND_P2P_URI = "127.0.0.1:18444";
 
-async function startMaker(ethereumAddress: string) {
+async function startMaker() {
+    const bitcoinWallet = new BitcoinWallet("regtest");
+    await bitcoinWallet.init(BITCOIND_P2P_URI);
+    await new Promise(r => setTimeout(r, 1000));
+    await setupBitcoin(await bitcoinWallet.getAddress(), 2); // We may decide to do that separately.
+    {
+        await new Promise(r => setTimeout(r, 20000));
+        const balance = await bitcoinWallet.getBalance();
+        console.log("[maker] Bitcoin balance:", balance.toJSON());
+    }
+    const ethereumWallet = new EthereumWallet();
+
+    const ledgerActionHandler = new LedgerActionHandler(
+        bitcoinWallet,
+        ethereumWallet
+    );
+
     const maker = new HelloSwap(
         "http://localhost:8000/",
-        ethereumAddress,
-        "maker"
+        ethereumWallet.getAccount(),
+        "maker",
+        ledgerActionHandler
     );
     console.log("[maker] started:", await maker.cndPeerId());
     return maker;
 }
 
-async function startTaker(ethereumAddress: string) {
+async function startTaker() {
+    const bitcoinWallet = new BitcoinWallet("regtest");
+    await bitcoinWallet.init(BITCOIND_P2P_URI);
+    const ethereumWallet = new EthereumWallet();
+
+    const ledgerActionHandler = new LedgerActionHandler(
+        bitcoinWallet,
+        ethereumWallet
+    );
+
     const taker = new HelloSwap(
         "http://localhost:8001/",
-        ethereumAddress,
-        "taker"
+        ethereumWallet.getAccount(),
+        "taker",
+        ledgerActionHandler
     );
     console.log("[taker] started:", await taker.cndPeerId());
     return taker;
 }
 
 (async function main() {
-    const makerBitcoinWallet = new BitcoinWallet("regtest");
-    await makerBitcoinWallet.init(BITCOIND_P2P_URI);
-
-    await setupBitcoin(await makerBitcoinWallet.getAddress(), 2); // We may decide to do that separately.
-
-    const makerEthereumWallet = new EthereumWallet();
-    const takerEthereumWallet = new EthereumWallet();
-
-    const taker = await startTaker(takerEthereumWallet.getAccount());
-    const maker = await startMaker(makerEthereumWallet.getAccount());
+    const taker = await startTaker();
+    const maker = await startMaker();
+    const takerPeerId = await taker.cndPeerId();
+    console.log("Taker peer id:", takerPeerId);
 
     await maker.makeOfferSellBtcBuyEth(
         "100000000",
         "9000000000000000000",
-        await taker.cndPeerId(),
+        takerPeerId,
         "/ip4/127.0.0.1/tcp/9940"
     );
     console.log("[maker] Offer sent!");

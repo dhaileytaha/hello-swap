@@ -3,6 +3,7 @@ import moment from "moment";
 import { Action, EmbeddedRepresentationSubEntity } from "../gen/siren";
 import { PropertiesOfASWAP } from "../gen/swap";
 import { Cnd, LedgerAction } from "./cnd";
+import LedgerActionHandler from "./ledgerActions";
 
 export interface Asset {
     name: string;
@@ -24,15 +25,18 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private readonly ethereumAddress: string;
     private readonly whoAmI: string;
+    private readonly ledgerActionHandler: any;
 
     public constructor(
         cndUrl: string,
         ethereumAddress: string,
-        whoAmI: string
+        whoAmI: string,
+        ledgerActionHandler: LedgerActionHandler
     ) {
         this.cnd = new Cnd(cndUrl);
         this.ethereumAddress = ethereumAddress;
         this.whoAmI = whoAmI;
+        this.ledgerActionHandler = ledgerActionHandler;
 
         // On an interval, get all swaps that can be funded or redeemed
         // and perform the corresponding action using a wallet
@@ -58,6 +62,7 @@ export class HelloSwap {
         peerId: string,
         peerAddress: string
     ) {
+        console.log("Sending offer to:", peerId);
         const swap = {
             alpha_ledger: {
                 name: "bitcoin",
@@ -112,27 +117,7 @@ export class HelloSwap {
     private doLedgerAction(action: LedgerAction) {
         const type = changeCase.pascalCase(action.type);
 
-        (this as any)[`do${type}`](action.payload);
-    }
-
-    // @ts-ignore: called dynamically
-    private doBitcoinSendAmountToAddress(payload: any) {
-        console.log("Do bitcoin-send-amount-to-address");
-    }
-
-    // @ts-ignore: called dynamically
-    private doBitcoinBroadcastSignedTransaction(payload: any) {
-        console.log("Do bitcoin-broadcast-sigend-transaction");
-    }
-
-    // @ts-ignore: called dynamically
-    private doEthereumDeployContract(payload: any) {
-        console.log("Do ethereum-deploy-contract");
-    }
-
-    // @ts-ignore: called dynamically
-    private doEthereumCallContract(payload: any) {
-        console.log("Do ethereum-call-contract");
+        (this.ledgerActionHandler as any)[`do${type}`](action.payload);
     }
 
     private toSwap(entity: EmbeddedRepresentationSubEntity): Swap {

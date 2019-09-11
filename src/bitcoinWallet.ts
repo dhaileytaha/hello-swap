@@ -5,11 +5,12 @@ import WalletDB from "bcoin/lib/wallet/WalletDB";
 import Logger from "blgr";
 
 export class BitcoinWallet {
+    public readonly network: any;
     private readonly walletdb: any;
     private wallet: any;
-    private readonly network: any;
     private address: any;
-    private readonly node: any;
+    private readonly pool: any;
+    private readonly chain: any;
     private readonly logger: any;
 
     constructor(network: string) {
@@ -23,34 +24,39 @@ export class BitcoinWallet {
             logger: this.logger,
         });
         this.network = network;
-        this.node = new bcoin.SPVNode({
+        this.chain = new bcoin.Chain({
+            spv: true,
             network,
             logger: this.logger,
-            memory: true,
+        });
+        this.pool = new bcoin.Pool({
+            chain: this.chain,
+            network,
+            logger: this.logger,
         });
     }
 
     public async init(peerUri: string) {
         await this.logger.open();
-        await this.node.open();
+        await this.pool.open();
         await this.walletdb.open();
-        await this.node.connect();
+        await this.chain.open();
+        await this.pool.connect();
         this.wallet = await this.walletdb.create({
             logger: this.logger,
             network: this.network,
         });
         this.address = await this.wallet.receiveAddress();
 
-        this.node.pool.watchAddress(this.address);
-        this.node.startSync();
+        this.pool.watchAddress(this.address);
+        this.pool.startSync();
 
-        this.node.on("tx", (tx: any) => {
+        this.pool.on("tx", (tx: any) => {
             this.walletdb.addTX(tx);
         });
 
-        this.node.on("block", (block: any) => {
+        this.pool.on("block", (block: any) => {
             this.walletdb.addBlock(block);
-
             if (block.txs.length > 0) {
                 block.txs.forEach((tx: any) => {
                     this.walletdb.addTX(tx);
@@ -62,9 +68,9 @@ export class BitcoinWallet {
             console.log("Balance updated:\n", balance.toJSON());
         });
 
-        const netAddr = await this.node.pool.hosts.addNode(peerUri);
-        const peer = this.node.pool.createOutbound(netAddr);
-        this.node.pool.peers.add(peer);
+        const netAddr = await this.pool.hosts.addNode(peerUri);
+        const peer = this.pool.createOutbound(netAddr);
+        this.pool.peers.add(peer);
     }
 
     public getBalance() {
@@ -75,6 +81,22 @@ export class BitcoinWallet {
     public async getAddress() {
         this.isInit();
         return this.address.toString(this.network);
+    }
+
+    public async sendToAddress(address: string, satoshiAmount: number) {
+        this.isInit();
+        const tx = await this.wallet.send({
+            witness: true,
+            outputs: [
+                {
+                    address,
+                    value: satoshiAmount,
+                },
+            ],
+        });
+        console.log("TxId:", tx.txid());
+        await this.pool.broadcast(tx);
+        return tx;
     }
 
     private isInit() {

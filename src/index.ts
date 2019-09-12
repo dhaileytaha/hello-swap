@@ -19,6 +19,7 @@ import { setupBitcoin, setupEthereum } from "./setup/setup";
 
 const BITCOIND_P2P_URI = "127.0.0.1:18444";
 
+// TODO: Once funding is removed from here and pushed in create-comit-app, merge startMaker() and startTaker() together
 async function startMaker() {
     const bitcoinWallet = new BitcoinWallet("regtest");
     await bitcoinWallet.init(BITCOIND_P2P_URI);
@@ -72,6 +73,7 @@ async function startTaker() {
 }
 
 (async function main() {
+    // TODO: Let's call it Charlie & David to not be opinionated
     const taker = await startTaker();
     const maker = await startMaker();
 
@@ -89,7 +91,7 @@ async function startTaker() {
     console.log(
         `[taker] ${newSwaps.length} new swap(s) waiting for a decision`
     );
-
+    // TODO: Move inside but pass a predicate function (swap:Swap) => bool that decide whether to accept
     const swapToAccept = newSwaps[0];
     await taker.acceptSwap(swapToAccept);
 

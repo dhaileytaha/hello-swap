@@ -90,7 +90,6 @@ export class BitcoinWallet {
                 },
             ],
         });
-        console.log("TxId:", tx.txid());
         await this.pool.broadcast(tx);
         return tx;
     }

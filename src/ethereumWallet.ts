@@ -24,4 +24,17 @@ export class EthereumWallet {
         };
         return this.wallet.sendTransaction(transaction);
     }
+
+    public callContract(
+        data: string,
+        contractAddress: string,
+        gasLimit: string
+    ) {
+        const transaction: TransactionRequest = {
+            data,
+            to: contractAddress,
+            gasLimit,
+        };
+        return this.wallet.sendTransaction(transaction);
+    }
 }

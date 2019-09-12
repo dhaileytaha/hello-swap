@@ -25,7 +25,7 @@ export default class LedgerActionHandler {
         this.ethereum = ethereum;
     }
 
-    public doBitcoinSendAmountToAddress(
+    public async doBitcoinSendAmountToAddress(
         payload: BitcoinSendAmountToAddressPayload
     ) {
         const sats = parseInt(payload.amount, 10);
@@ -36,27 +36,49 @@ export default class LedgerActionHandler {
                 )}`
             );
         }
-        return this.bitcoin.sendToAddress(payload.to, sats);
+        const response = await this.bitcoin.sendToAddress(payload.to, sats);
+        console.log(
+            "[trace] Bitcoin Send To Address response:",
+            JSON.stringify(response)
+        );
+        return response;
     }
 
     public doBitcoinBroadcastSignedTransaction(
         // @ts-ignore
         payload: BitcoinBroadcastSignedTransactionPayload
     ) {
-        console.log("Do bitcoin-broadcast-sigend-transaction");
+        console.log("[trace] Do bitcoin-broadcast-signed-transaction");
     }
 
-    public doEthereumDeployContract(payload: EthereumDeployContractPayload) {
+    public async doEthereumDeployContract(
+        payload: EthereumDeployContractPayload
+    ) {
         const value = new BigNumber(payload.amount);
-        return this.ethereum.deployContract(
+        // await here makes it easier to debug issues
+        const response = await this.ethereum.deployContract(
             payload.data,
             value,
             payload.gas_limit
         );
+        console.log(
+            "[trace] Ethereum Deploy Contract response:",
+            JSON.stringify(response)
+        );
+        return response;
     }
 
     // @ts-ignore
-    public doEthereumCallContract(payload: EthereumCallContractPayload) {
-        console.log("Do ethereum-call-contract");
+    public async doEthereumCallContract(payload: EthereumCallContractPayload) {
+        const response = await this.ethereum.callContract(
+            payload.data,
+            payload.contract_address,
+            payload.gas_limit
+        );
+        console.log(
+            "[trace] Ethereum Call Contract response:",
+            JSON.stringify(response)
+        );
+        return response;
     }
 }

@@ -9,7 +9,6 @@
  * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
  */
 
-import delay from "delay";
 import { parseEther } from "ethers/utils";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
@@ -56,7 +55,8 @@ async function startApp(
         cndUrl,
         ethereumWallet.getAccount(),
         whoAmI,
-        ledgerActionHandler
+        ledgerActionHandler,
+        () => true
     );
     console.log(`[${whoAmI}] Started:`, await app.cndPeerId());
     return app;
@@ -73,16 +73,4 @@ async function startApp(
         "/ip4/127.0.0.1/tcp/9940"
     );
     console.log("[david] Offer sent!");
-
-    await delay(2000);
-
-    const newSwaps = await charlie.getNewSwaps();
-    console.log(
-        `[charlie] ${newSwaps.length} new swap(s) waiting for a decision`
-    );
-    // TODO: Move inside but pass a predicate function (swap:Swap) => bool that decide whether to accept
-    const swapToAccept = newSwaps[0];
-    await charlie.acceptSwap(swapToAccept);
-
-    console.log("[charlie] Swap request accepted!", swapToAccept.id);
 })();

@@ -49,25 +49,57 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private readonly ethereumAddress: string;
     private readonly whoAmI: string;
-    private readonly ledgerActionHandler: any;
+    private readonly ledgerActionHandler: LedgerActionHandler;
+    private readonly acceptPredicate: (swap: Swap) => boolean;
     private actionsDone: string[];
 
+    /**
+     * new HelloSwap()
+     * @param cndUrl The url to cnd REST API
+     * @param ethereumAddress The Ethereum address, to use to receive Ether.
+     * @param whoAmI A name for logging purposes only
+     * @param ledgerActionHandler To handle all blockchain actions
+     * @param acceptPredicate If it returns true the swap is accepted, otherwise it is declined.
+     */
     public constructor(
         cndUrl: string,
         ethereumAddress: string,
         whoAmI: string,
-        ledgerActionHandler: LedgerActionHandler
+        ledgerActionHandler: LedgerActionHandler,
+        acceptPredicate: (swap: Swap) => boolean
     ) {
         this.cnd = new Cnd(cndUrl);
         this.ethereumAddress = ethereumAddress;
         this.whoAmI = whoAmI;
         this.ledgerActionHandler = ledgerActionHandler;
         this.actionsDone = [];
+        this.acceptPredicate = acceptPredicate;
 
         // On an interval, get all swaps that can be funded or redeemed
         // and perform the corresponding action using a wallet
 
         setInterval(() => {
+            this.getNewSwaps().then(
+                (swaps: EmbeddedRepresentationSubEntity[]) => {
+                    if (swaps.length) {
+                        console.log(
+                            `[${whoAmI}] ${swaps.length} new swap(s) waiting for a decision`
+                        );
+                    }
+                    swaps.forEach(
+                        async (swap: EmbeddedRepresentationSubEntity) => {
+                            const simpleSwap = HelloSwap.toSwap(swap);
+                            if (this.acceptPredicate(simpleSwap)) {
+                                await this.acceptSwap(simpleSwap);
+                                console.log(
+                                    `[${whoAmI}] swap accepted:`,
+                                    simpleSwap.id
+                                );
+                            }
+                        }
+                    );
+                }
+            );
             this.getOngoingSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
                     swaps.forEach((swap: EmbeddedRepresentationSubEntity) =>
@@ -118,26 +150,25 @@ export class HelloSwap {
         return this.cnd.postSwap(swap);
     }
 
-    public async getNewSwaps(): Promise<Swap[]> {
-        const swaps = await this.cnd.getSwaps();
-        return swaps
-            .filter((swap: EmbeddedRepresentationSubEntity) => {
-                return (
-                    swap.actions &&
-                    !!swap.actions.find((action: Action) => {
-                        return action.name === "accept";
-                    })
-                );
-            })
-            .map(HelloSwap.toSwap);
-    }
-
-    public async acceptSwap(swap: Swap) {
+    private async acceptSwap(swap: Swap) {
         const swapDetails = await this.cnd.getSwap(swap.id);
         const actions = swapDetails.actions;
         const acceptAction = actions!.find(action => action.name === "accept");
 
         return this.cnd.postAccept(acceptAction!, this.ethereumAddress);
+    }
+
+    private async getNewSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {
+        const swaps = await this.cnd.getSwaps();
+
+        return swaps.filter((swap: EmbeddedRepresentationSubEntity) => {
+            return (
+                swap.actions &&
+                !!swap.actions.find((action: Action) => {
+                    return action.name === "accept";
+                })
+            );
+        });
     }
 
     private async doLedgerAction(action: LedgerAction) {

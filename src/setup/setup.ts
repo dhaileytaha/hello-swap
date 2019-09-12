@@ -20,12 +20,11 @@ const BITCOIN_AUTH = {
 export async function setupBitcoin(fundAddress: string, fundAmount: number) {
     const bitcoinClient = new Client(BITCOIN_AUTH);
     await bitcoinClient.generate(101);
-    console.log("Funding", fundAddress, "with", fundAmount, "BTC");
     await bitcoinClient.sendToAddress(fundAddress, fundAmount);
     await bitcoinClient.generate(2);
     setInterval(() => {
         bitcoinClient.generate(1);
-    }, 500);
+    }, 1000);
 }
 
 export async function setupEthereum(

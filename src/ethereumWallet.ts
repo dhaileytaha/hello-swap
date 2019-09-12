@@ -16,19 +16,12 @@ export class EthereumWallet {
         return this.wallet.address;
     }
 
-    public async deployContract(
-        data: string,
-        value: BigNumber,
-        gasLimit: string
-    ) {
+    public deployContract(data: string, value: BigNumber, gasLimit: string) {
         const transaction: TransactionRequest = {
             data,
             value,
             gasLimit,
         };
-        console.log("Sending");
-        const result = await this.wallet.sendTransaction(transaction);
-        console.log("Result of contract deploy", JSON.stringify(result));
-        return result;
+        return this.wallet.sendTransaction(transaction);
     }
 }

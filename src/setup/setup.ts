@@ -7,6 +7,7 @@
 
 import Client from "bitcoin-core";
 import { ethers } from "ethers";
+import { BigNumber } from "ethers/utils";
 
 const BITCOIN_AUTH = {
     protocol: "http",
@@ -27,7 +28,10 @@ export async function setupBitcoin(fundAddress: string, fundAmount: number) {
     }, 500);
 }
 
-export async function setupEthereum(fundAddress: string, fundAmount: number) {
+export async function setupEthereum(
+    fundAddress: string,
+    fundAmount: BigNumber
+) {
     const provider = new ethers.providers.JsonRpcProvider(
         "http://localhost:8545"
     );

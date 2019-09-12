@@ -10,11 +10,12 @@
  */
 
 import delay from "delay";
+import { parseEther } from "ethers/utils";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 import LedgerActionHandler from "./ledgerActions";
-import { setupBitcoin } from "./setup/setup";
+import { setupBitcoin, setupEthereum } from "./setup/setup";
 
 const BITCOIND_P2P_URI = "127.0.0.1:18444";
 
@@ -52,6 +53,8 @@ async function startTaker() {
     const bitcoinWallet = new BitcoinWallet("regtest");
     await bitcoinWallet.init(BITCOIND_P2P_URI);
     const ethereumWallet = new EthereumWallet();
+
+    await setupEthereum(ethereumWallet.getAccount(), parseEther("30"));
 
     const ledgerActionHandler = new LedgerActionHandler(
         bitcoinWallet,

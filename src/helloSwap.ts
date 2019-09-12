@@ -88,7 +88,7 @@ export class HelloSwap {
         peerId: string,
         peerAddress: string
     ) {
-        console.log("[maker] Sending offer to:", peerId);
+        console.log(`[${this.whoAmI}] Sending offer to:`, peerId);
         const swap = {
             alpha_ledger: {
                 name: "bitcoin",

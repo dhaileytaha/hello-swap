@@ -35,6 +35,9 @@ export async function setupEthereum(
     const provider = new ethers.providers.JsonRpcProvider(
         "http://localhost:8545"
     );
-    const wallet = ethers.Wallet.fromMnemonic("").connect(provider);
-    return wallet.sendTransaction({ to: fundAddress, value: fundAmount });
+    // This extracts the parity dev account
+    const defaultAccounts = await provider.listAccounts();
+    const signer = provider.getSigner(defaultAccounts[0]);
+    await signer.unlock("");
+    return signer.sendTransaction({ to: fundAddress, value: fundAmount });
 }

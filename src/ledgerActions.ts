@@ -48,7 +48,7 @@ export default class LedgerActionHandler {
         // @ts-ignore
         payload: BitcoinBroadcastSignedTransactionPayload
     ) {
-        console.log("[trace] Do bitcoin-broadcast-signed-transaction");
+        throw new Error("[UNIMPLEMENTED] bitcoin-broadcast-signed-transaction");
     }
 
     public async doEthereumDeployContract(

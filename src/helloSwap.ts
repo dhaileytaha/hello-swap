@@ -75,9 +75,9 @@ export class HelloSwap {
         this.actionsDone = [];
         this.acceptPredicate = acceptPredicate;
 
-        // On an interval, get all swaps that can be funded or redeemed
-        // and perform the corresponding action using a wallet
-
+        // On an interval:
+        // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
+        // 2. Get all swaps that can be funded or redeemed and perform the corresponding action using a wallet
         setInterval(() => {
             this.getNewSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
@@ -93,6 +93,12 @@ export class HelloSwap {
                                 await this.acceptSwap(simpleSwap);
                                 console.log(
                                     `[${whoAmI}] swap accepted:`,
+                                    simpleSwap.id
+                                );
+                            } else {
+                                await this.declineSwap(simpleSwap);
+                                console.log(
+                                    `[${whoAmI}] swap declined:`,
                                     simpleSwap.id
                                 );
                             }
@@ -156,6 +162,16 @@ export class HelloSwap {
         const acceptAction = actions!.find(action => action.name === "accept");
 
         return this.cnd.postAccept(acceptAction!, this.ethereumAddress);
+    }
+
+    private async declineSwap(swap: Swap) {
+        const swapDetails = await this.cnd.getSwap(swap.id);
+        const actions = swapDetails.actions;
+        const declineAction = actions!.find(
+            action => action.name === "decline"
+        );
+
+        return this.cnd.postAction(declineAction!);
     }
 
     private async getNewSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {

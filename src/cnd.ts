@@ -114,6 +114,7 @@ export class Cnd {
         return entity.entities as EmbeddedRepresentationSubEntity[];
     }
 
+    // TODO: This is very  opinionated, maybe better to use getData() with postAction()?
     public postAccept(acceptAction: Action, refundAccount: string) {
         return axios.post(
             this.rootUrl()
@@ -122,6 +123,14 @@ export class Cnd {
             {
                 beta_ledger_refund_identity: refundAccount,
             }
+        );
+    }
+
+    public postAction(action: Action) {
+        return axios.post(
+            this.rootUrl()
+                .path(action.href)
+                .toString()
         );
     }
 

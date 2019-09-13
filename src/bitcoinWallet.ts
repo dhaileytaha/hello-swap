@@ -91,8 +91,8 @@ export class BitcoinWallet {
                 },
             ],
         });
-        await this.pool.broadcast(tx);
-        return tx;
+        const broadcast = await this.pool.broadcast(tx);
+        return { tx, broadcast };
     }
 
     public broadcastTransaction(transactionHex: string) {

@@ -22,9 +22,11 @@ export async function setupBitcoin(fundAddress: string, fundAmount: number) {
     await bitcoinClient.generate(101);
     await bitcoinClient.sendToAddress(fundAddress, fundAmount);
     await bitcoinClient.generate(2);
-    setInterval(() => {
-        bitcoinClient.generate(1);
-    }, 1000);
+    // This should be done by create-comit-app
+    // Run the following in the meantime: `docker exec -t setup_btc_1 sh -c "while true; do sleep 1 && bitcoin-cli -regtest generate 1; done"`
+    // setInterval(() => {
+    //     bitcoinClient.generate(1);
+    // }, 1000);
 }
 
 export async function setupEthereum(

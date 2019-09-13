@@ -52,6 +52,7 @@ export class HelloSwap {
     private readonly ledgerActionHandler: LedgerActionHandler;
     private readonly acceptPredicate: (swap: Swap) => boolean;
     private actionsDone: string[];
+    private readonly interval: NodeJS.Timeout;
 
     /**
      * new HelloSwap()
@@ -78,7 +79,8 @@ export class HelloSwap {
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
         // 2. Get all swaps that can be funded or redeemed and perform the corresponding action using a wallet
-        setInterval(() => {
+        // @ts-ignore
+        this.interval = setInterval(() => {
             this.getNewSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
                     if (swaps.length) {
@@ -106,6 +108,7 @@ export class HelloSwap {
                     );
                 }
             );
+
             this.getOngoingSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
                     swaps.forEach((swap: EmbeddedRepresentationSubEntity) =>
@@ -154,6 +157,13 @@ export class HelloSwap {
         };
 
         return this.cnd.postSwap(swap);
+    }
+
+    /**
+     * Clean-up interval
+     */
+    public stop() {
+        clearInterval(this.interval);
     }
 
     private async acceptSwap(swap: Swap) {

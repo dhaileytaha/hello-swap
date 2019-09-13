@@ -61,18 +61,46 @@ async function startApp(
         `[${whoAmI}] Ether balance:`,
         JSON.stringify(formatEther(await ethereumWallet.getBalance()))
     );
-    return app;
+    return { app, bitcoinWallet, ethereumWallet };
 }
 
 (async function main() {
     const charlie = await startApp("charlie", "http://localhost:8001", 0, "10");
     const david = await startApp("david", "http://localhost:8000", 2, "0.01");
 
-    await david.makeOfferSellBtcBuyEth(
+    await david.app.makeOfferSellBtcBuyEth(
         "100000000",
         "9000000000000000000",
-        await charlie.cndPeerId(),
+        await charlie.app.cndPeerId(),
         "/ip4/127.0.0.1/tcp/9940"
     );
-    console.log("[david] Offer sent!");
+
+    process.stdin.resume(); // so the program will not close instantly
+
+    async function exitHandler(exitCode: NodeJS.Signals) {
+        console.log(`Received ${exitCode}, closing...`);
+        await charlie.app.stop();
+        await david.app.stop();
+        const promises = [charlie, david].map(async (persona: any) => {
+            const whoAmI = persona.app.whoAmI;
+            console.log(
+                `[${whoAmI}] Bitcoin balance:`,
+                JSON.stringify(
+                    (await persona.bitcoinWallet.getBalance()).toJSON()
+                )
+            );
+            console.log(
+                `[${whoAmI}] Ether balance:`,
+                JSON.stringify(
+                    formatEther(await persona.ethereumWallet.getBalance())
+                )
+            );
+        });
+        await Promise.all(promises);
+        process.exit();
+    }
+
+    process.on("SIGINT", exitHandler);
+    process.on("SIGUSR1", exitHandler);
+    process.on("SIGUSR2", exitHandler);
 })();

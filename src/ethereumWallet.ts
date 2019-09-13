@@ -16,6 +16,10 @@ export class EthereumWallet {
         return this.wallet.address;
     }
 
+    public getBalance() {
+        return this.wallet.getBalance();
+    }
+
     public deployContract(data: string, value: BigNumber, gasLimit: string) {
         const transaction: TransactionRequest = {
             data,

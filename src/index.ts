@@ -9,7 +9,7 @@
  * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
  */
 
-import { parseEther } from "ethers/utils";
+import { formatEther, parseEther } from "ethers/utils";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
@@ -32,12 +32,6 @@ async function startApp(
         await setupBitcoin(await bitcoinWallet.getAddress(), startBitcoin);
         await new Promise(r => setTimeout(r, 10000));
     }
-    const balance = await bitcoinWallet.getBalance();
-    console.log(
-        `[${whoAmI}] Bitcoin balance:`,
-        JSON.stringify(balance.toJSON())
-    );
-
     const ethereumWallet = new EthereumWallet();
     if (startEther) {
         await setupEthereum(
@@ -59,6 +53,14 @@ async function startApp(
         () => true
     );
     console.log(`[${whoAmI}] Started:`, await app.cndPeerId());
+    console.log(
+        `[${whoAmI}] Bitcoin balance:`,
+        JSON.stringify((await bitcoinWallet.getBalance()).toJSON())
+    );
+    console.log(
+        `[${whoAmI}] Ether balance:`,
+        JSON.stringify(formatEther(await ethereumWallet.getBalance()))
+    );
     return app;
 }
 

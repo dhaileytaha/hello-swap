@@ -5,6 +5,7 @@
 //   doEthereumCallContract: (payload: any) => Promise<any>;
 // }
 
+import colors from "colors";
 import { BigNumber } from "ethers/utils";
 import { Field } from "../gen/siren";
 import { BitcoinWallet } from "./bitcoinWallet";
@@ -39,8 +40,8 @@ export default class LedgerActionHandler {
         }
         const response = await this.bitcoin.sendToAddress(payload.to, sats);
         console.log(
-            "[trace] Bitcoin Send To Address response:",
-            JSON.stringify(response)
+            colors.grey("[trace] Bitcoin Send To Address response:"),
+            colors.grey(JSON.stringify(response))
         );
         return response;
     }
@@ -62,9 +63,10 @@ export default class LedgerActionHandler {
             value,
             payload.gas_limit
         );
+        // TODO: remove this lazy hack and configure a proper logger
         console.log(
-            "[trace] Ethereum Deploy Contract response:",
-            JSON.stringify(response)
+            colors.grey("[trace] Ethereum Deploy Contract response:"),
+            colors.grey(JSON.stringify(response))
         );
         return response;
     }
@@ -77,8 +79,8 @@ export default class LedgerActionHandler {
             payload.gas_limit
         );
         console.log(
-            "[trace] Ethereum Call Contract response:",
-            JSON.stringify(response)
+            colors.grey("[trace] Ethereum Call Contract response:"),
+            colors.grey(JSON.stringify(response))
         );
         return response;
     }

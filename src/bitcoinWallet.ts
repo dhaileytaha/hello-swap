@@ -1,6 +1,7 @@
 /// <reference path="./bcoin.d.ts" />
 
 import bcoin from "bcoin";
+import TX from "bcoin/lib/primitives/tx";
 import WalletDB from "bcoin/lib/wallet/WalletDB";
 import Logger from "blgr";
 
@@ -92,6 +93,11 @@ export class BitcoinWallet {
         });
         await this.pool.broadcast(tx);
         return tx;
+    }
+
+    public broadcastTransaction(transactionHex: string) {
+        const transaction = TX.fromRaw(transactionHex, "hex");
+        return this.pool.broadcast(transaction);
     }
 
     private isInit() {

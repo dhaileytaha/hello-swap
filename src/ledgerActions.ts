@@ -1,10 +1,3 @@
-// interface LedgerActionHandler {
-//   doBitcoinSendAmountToAddress: (payload: any) => Promise<string>;
-//   doBitcoinBroadcastSignedTransaction: (payload: any) => Promise<string>;
-//   doEthereumDeployContract: (payload: any) => Promise<any>;
-//   doEthereumCallContract: (payload: any) => Promise<any>;
-// }
-
 import colors from "colors";
 import { BigNumber } from "ethers/utils";
 import { Field } from "../gen/siren";
@@ -31,7 +24,7 @@ export default class LedgerActionHandler {
         payload: BitcoinSendAmountToAddressPayload
     ) {
         const sats = parseInt(payload.amount, 10);
-        if (!sats && this.bitcoin.network !== payload.network) {
+        if (!sats || this.bitcoin.network !== payload.network) {
             throw new Error(
                 `Issue with the bitcoin-send-amount-to-address payload: ${JSON.stringify(
                     payload
@@ -46,11 +39,24 @@ export default class LedgerActionHandler {
         return response;
     }
 
-    public doBitcoinBroadcastSignedTransaction(
-        // @ts-ignore
+    public async doBitcoinBroadcastSignedTransaction(
         payload: BitcoinBroadcastSignedTransactionPayload
     ) {
-        throw new Error("[UNIMPLEMENTED] bitcoin-broadcast-signed-transaction");
+        if (this.bitcoin.network !== payload.network) {
+            throw new Error(
+                `Issue with the bitcoin-broadcast-signed-transaction payload: ${JSON.stringify(
+                    payload
+                )}`
+            );
+        }
+        const response = await this.bitcoin.broadcastTransaction(payload.hex);
+        console.log(
+            colors.grey(
+                "[trace] Bitcoin Broadcast Signed Transaction response:"
+            ),
+            colors.grey(JSON.stringify(response))
+        );
+        return response;
     }
 
     public async doEthereumDeployContract(
@@ -71,7 +77,6 @@ export default class LedgerActionHandler {
         return response;
     }
 
-    // @ts-ignore
     public async doEthereumCallContract(payload: EthereumCallContractPayload) {
         const response = await this.ethereum.callContract(
             payload.data,

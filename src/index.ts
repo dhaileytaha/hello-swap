@@ -53,9 +53,10 @@ async function startApp(
         () => true
     );
     console.log(`[${whoAmI}] Started:`, await app.cndPeerId());
+
     console.log(
         `[${whoAmI}] Bitcoin balance:`,
-        JSON.stringify((await bitcoinWallet.getBalance()).toJSON())
+        await bitcoinWallet.getBalance()
     );
     console.log(
         `[${whoAmI}] Ether balance:`,
@@ -85,9 +86,7 @@ async function startApp(
             const whoAmI = persona.app.whoAmI;
             console.log(
                 `[${whoAmI}] Bitcoin balance:`,
-                JSON.stringify(
-                    (await persona.bitcoinWallet.getBalance()).toJSON()
-                )
+                await persona.bitcoinWallet.getBalance()
             );
             console.log(
                 `[${whoAmI}] Ether balance:`,

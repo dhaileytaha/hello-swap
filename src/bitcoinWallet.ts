@@ -1,6 +1,7 @@
 /// <reference path="./bcoin.d.ts" />
 
 import bcoin from "bcoin";
+import Amount from "bcoin/lib/btc/amount";
 import TX from "bcoin/lib/primitives/tx";
 import WalletDB from "bcoin/lib/wallet/WalletDB";
 import Logger from "blgr";
@@ -70,9 +71,12 @@ export class BitcoinWallet {
         this.pool.peers.add(peer);
     }
 
-    public getBalance() {
+    public async getBalance() {
         this.isInit();
-        return this.wallet.getBalance();
+        const balance = await this.wallet.getBalance();
+        // TODO: Balances stay unconfirmed, try to use bcoin.SPVNode (and set node.http to undefined) see if it catches the confirmations
+        const amount = new Amount(balance.toJSON().unconfirmed, "sat");
+        return amount.toBTC();
     }
 
     public getAddress() {

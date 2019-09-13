@@ -6,6 +6,7 @@
 // }
 
 import { BigNumber } from "ethers/utils";
+import { Field } from "../gen/siren";
 import { BitcoinWallet } from "./bitcoinWallet";
 import {
     BitcoinBroadcastSignedTransactionPayload,
@@ -80,5 +81,16 @@ export default class LedgerActionHandler {
             JSON.stringify(response)
         );
         return response;
+    }
+
+    public getData(field: Field) {
+        const classes: string[] = field.class;
+        if (classes.includes("bitcoin") && classes.includes("address")) {
+            return this.bitcoin.getAddress();
+        }
+        if (classes.includes("bitcoin") && classes.includes("feePerWU")) {
+            // Return a hardcoded value, a fee service would be better
+            return 150;
+        }
     }
 }

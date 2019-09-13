@@ -1,6 +1,6 @@
 import changeCase from "change-case";
 import moment from "moment";
-import { Action, EmbeddedRepresentationSubEntity } from "../gen/siren";
+import { Action, EmbeddedRepresentationSubEntity, Field } from "../gen/siren";
 import { PropertiesOfASWAP } from "../gen/swap";
 import { Cnd, LedgerAction } from "./cnd";
 import LedgerActionHandler from "./ledgerActions";
@@ -198,8 +198,15 @@ export class HelloSwap {
             return action.name === "fund" || action.name === "redeem";
         })!;
 
+        const data: any = {};
+        if (action.fields && action.fields.length) {
+            action.fields.forEach((field: Field) => {
+                data[field.name] = this.ledgerActionHandler.getData(field);
+            });
+        }
+
         return this.cnd
-            .getAction(action.href)
+            .getAction(action.href, data)
             .then((ledgerAction: LedgerAction) => {
                 const stringAction = JSON.stringify(ledgerAction);
                 if (this.actionsDone.indexOf(stringAction) === -1) {

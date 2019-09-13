@@ -135,11 +135,15 @@ export class Cnd {
         return response.data as EmbeddedRepresentationSubEntity;
     }
 
-    public async getAction(relativePath: string): Promise<LedgerAction> {
+    public async getAction(
+        relativePath: string,
+        queryParameters: any
+    ): Promise<LedgerAction> {
         return axios
             .get(
                 this.rootUrl()
                     .path(relativePath)
+                    .query(URI.buildQuery(queryParameters))
                     .toString()
             )
             .then(response => response.data as LedgerAction);

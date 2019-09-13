@@ -74,7 +74,7 @@ export class BitcoinWallet {
         return this.wallet.getBalance();
     }
 
-    public async getAddress() {
+    public getAddress() {
         this.isInit();
         return this.address.toString(this.network);
     }

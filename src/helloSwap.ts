@@ -198,8 +198,28 @@ export class HelloSwap {
     }
 
     private async doLedgerAction(action: LedgerAction) {
-        const type = changeCase.pascalCase(action.type);
-        return (this.ledgerActionHandler as any)[`do${type}`](action.payload);
+        switch (action.type) {
+            case "bitcoin-broadcast-signed-transaction": {
+                return this.ledgerActionHandler.doBitcoinBroadcastSignedTransaction(
+                    action.payload
+                );
+            }
+            case "bitcoin-send-amount-to-address": {
+                return this.ledgerActionHandler.doBitcoinSendAmountToAddress(
+                    action.payload
+                );
+            }
+            case "ethereum-call-contract": {
+                return this.ledgerActionHandler.doEthereumCallContract(
+                    action.payload
+                );
+            }
+            case "ethereum-deploy-contract": {
+                return this.ledgerActionHandler.doEthereumDeployContract(
+                    action.payload
+                );
+            }
+        }
     }
 
     private async getOngoingSwaps(): Promise<

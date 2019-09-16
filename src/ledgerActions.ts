@@ -12,7 +12,6 @@ import { EthereumWallet } from "./ethereumWallet";
 
 export default class LedgerActionHandler {
     private readonly bitcoin: BitcoinWallet;
-    // @ts-ignore
     private readonly ethereum: EthereumWallet;
 
     public constructor(bitcoin: BitcoinWallet, ethereum: EthereumWallet) {

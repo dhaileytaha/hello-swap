@@ -1,6 +1,9 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import URI from "urijs";
 import { Action, EmbeddedRepresentationSubEntity, Entity } from "../gen/siren";
+import actionToHttpRequest, {
+    FieldValueResolverFn,
+} from "./actionToHttpRequest";
 
 interface GetInfo {
     id: string;
@@ -114,24 +117,16 @@ export class Cnd {
         return entity.entities as EmbeddedRepresentationSubEntity[];
     }
 
-    // TODO: This is very  opinionated, maybe better to use getData() with postAction()?
-    public postAccept(acceptAction: Action, refundAccount: string) {
-        return axios.post(
-            this.rootUrl()
-                .path(acceptAction.href)
-                .toString(),
-            {
-                beta_ledger_refund_identity: refundAccount,
-            }
-        );
-    }
+    public async executeAction(
+        action: Action,
+        resolver?: FieldValueResolverFn
+    ): Promise<AxiosResponse> {
+        const request = await actionToHttpRequest(action, resolver);
 
-    public postAction(action: Action) {
-        return axios.post(
-            this.rootUrl()
-                .path(action.href)
-                .toString()
-        );
+        return axios.request({
+            baseURL: this.cndUrl,
+            ...request,
+        });
     }
 
     public async getSwap(id: string): Promise<EmbeddedRepresentationSubEntity> {
@@ -142,20 +137,6 @@ export class Cnd {
                 .toString()
         );
         return response.data as EmbeddedRepresentationSubEntity;
-    }
-
-    public async getAction(
-        relativePath: string,
-        queryParameters: any
-    ): Promise<LedgerAction> {
-        return axios
-            .get(
-                this.rootUrl()
-                    .path(relativePath)
-                    .query(URI.buildQuery(queryParameters))
-                    .toString()
-            )
-            .then(response => response.data as LedgerAction);
     }
 
     private rootUrl() {

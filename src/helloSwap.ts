@@ -47,10 +47,6 @@ export class HelloSwap {
         };
     }
     private readonly cnd: Cnd;
-    private readonly ethereumAddress: string;
-    private readonly whoAmI: string;
-    private readonly ledgerActionHandler: LedgerActionHandler;
-    private readonly acceptPredicate: (swap: Swap) => boolean;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
 
@@ -64,17 +60,13 @@ export class HelloSwap {
      */
     public constructor(
         cndUrl: string,
-        ethereumAddress: string,
-        whoAmI: string,
-        ledgerActionHandler: LedgerActionHandler,
-        acceptPredicate: (swap: Swap) => boolean
+        private readonly ethereumAddress: string,
+        private readonly whoAmI: string,
+        private readonly ledgerActionHandler: LedgerActionHandler,
+        private readonly acceptPredicate: (swap: Swap) => boolean
     ) {
         this.cnd = new Cnd(cndUrl);
-        this.ethereumAddress = ethereumAddress;
-        this.whoAmI = whoAmI;
-        this.ledgerActionHandler = ledgerActionHandler;
         this.actionsDone = [];
-        this.acceptPredicate = acceptPredicate;
 
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them

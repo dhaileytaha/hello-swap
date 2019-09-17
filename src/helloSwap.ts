@@ -2,7 +2,7 @@ import changeCase from "change-case";
 import colors from "colors";
 import { BigNumber } from "ethers/utils";
 import moment from "moment";
-import { Action, EmbeddedRepresentationSubEntity } from "../gen/siren";
+import { Action, EmbeddedRepresentationSubEntity, Field } from "../gen/siren";
 import { PropertiesOfASWAP } from "../gen/swap";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { Cnd, LedgerAction } from "./cnd";
@@ -56,7 +56,6 @@ export class HelloSwap {
     /**
      * new HelloSwap()
      * @param cndUrl The url to cnd REST API
-     * @param ethereumAddress The Ethereum address, to use to receive Ether.
      * @param whoAmI A name for logging purposes only
      * @param bitcoinWallet
      * @param ethereumWallet
@@ -64,7 +63,6 @@ export class HelloSwap {
      */
     public constructor(
         cndUrl: string,
-        private readonly ethereumAddress: string,
         private readonly whoAmI: string,
         private readonly bitcoinWallet: BitcoinWallet,
         private readonly ethereumWallet: EthereumWallet,
@@ -144,7 +142,7 @@ export class HelloSwap {
                 name: "ether",
                 quantity: wei,
             },
-            beta_ledger_redeem_identity: this.ethereumAddress,
+            beta_ledger_redeem_identity: this.ethereumWallet.getAccount(),
             alpha_expiry: moment().unix() + 7200,
             beta_expiry: moment().unix() + 3600,
             peer: {
@@ -168,12 +166,7 @@ export class HelloSwap {
         const actions = swapDetails.actions;
         const acceptAction = actions!.find(action => action.name === "accept");
 
-        // in this demo application, we know for sure that the accept action will require an ethereum address, hence we can simply configure the resolver to always return the ethereum address
-        // in a real application, the logic of the resolver will have to be more complicated
-        return this.cnd.executeAction(
-            acceptAction!,
-            async () => this.ethereumAddress
-        );
+        return this.cnd.executeAction(acceptAction!, this.fieldValueResolver);
     }
 
     private async declineSwap(swap: Swap) {
@@ -223,21 +216,10 @@ export class HelloSwap {
             return action.name === "fund" || action.name === "redeem";
         })!;
 
-        const response = await this.cnd.executeAction(action, async field => {
-            const classes: string[] = field.class;
-
-            if (classes.includes("bitcoin") && classes.includes("address")) {
-                return this.bitcoinWallet.getAddress();
-            }
-
-            if (classes.includes("bitcoin") && classes.includes("feePerWU")) {
-                return 150; // should probably be dynamic in a real application
-            }
-
-            if (classes.includes("ethereum") && classes.includes("address")) {
-                return this.ethereumWallet.getAccount();
-            }
-        });
+        const response = await this.cnd.executeAction(
+            action,
+            this.fieldValueResolver
+        );
 
         // This heuristic should is bad, should check content-type once it exists: https://github.com/comit-network/comit-rs/issues/992
         if (response.data && response.data.type && response.data.payload) {
@@ -256,6 +238,25 @@ export class HelloSwap {
                 );
                 return this.doLedgerAction(ledgerAction);
             }
+        }
+    }
+
+    private async fieldValueResolver(
+        field: Field
+    ): Promise<string | undefined> {
+        const classes: string[] = field.class;
+
+        if (classes.includes("bitcoin") && classes.includes("address")) {
+            return Promise.resolve(this.bitcoinWallet.getAddress());
+        }
+
+        if (classes.includes("bitcoin") && classes.includes("feePerWU")) {
+            // should probably be dynamic in a real application
+            return Promise.resolve("150");
+        }
+
+        if (classes.includes("ethereum") && classes.includes("address")) {
+            return Promise.resolve(this.ethereumWallet.getAccount());
         }
     }
 

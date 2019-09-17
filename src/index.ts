@@ -41,7 +41,6 @@ async function startApp(
 
     const app = new HelloSwap(
         cndUrl,
-        ethereumWallet.getAccount(),
         whoAmI,
         bitcoinWallet,
         ethereumWallet,

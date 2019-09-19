@@ -1,5 +1,3 @@
-/// <reference path="./bcoin.d.ts" />
-
 /** Orchestrate the hello swap apps
  * Start 2 instances of helloSwap
  * "Link" them together. eg extract PeerId etc.

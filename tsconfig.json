@@ -17,6 +17,7 @@
         "sourceMap": true,
         "strict": true,
         "target": "es6",
-        "allowJs": true
+        "allowJs": true,
+        "typeRoots": ["./node_modules/@types", "./types"]
     }
 }

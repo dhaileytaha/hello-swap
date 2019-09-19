@@ -84,14 +84,20 @@ export class BitcoinWallet {
         return this.address.toString(this.network);
     }
 
-    public async sendToAddress(address: string, satoshiAmount: number) {
+    public async sendToAddress(
+        address: string,
+        satoshis: number,
+        network: string
+    ) {
         this.isInit();
+        this.assertNetwork(network);
+
         const tx = await this.wallet.send({
             witness: true,
             outputs: [
                 {
                     address,
-                    value: satoshiAmount,
+                    value: satoshis,
                 },
             ],
         });
@@ -99,7 +105,9 @@ export class BitcoinWallet {
         return { tx, broadcast };
     }
 
-    public broadcastTransaction(transactionHex: string) {
+    public async broadcastTransaction(transactionHex: string, network: string) {
+        this.assertNetwork(network);
+
         const transaction = TX.fromRaw(transactionHex, "hex");
         return this.pool.broadcast(transaction);
     }
@@ -107,6 +115,14 @@ export class BitcoinWallet {
     private isInit() {
         if (!this.wallet) {
             throw new Error("Bitcoin wallet is not initialized");
+        }
+    }
+
+    private assertNetwork(network: string) {
+        if (network !== this.network) {
+            throw new Error(
+                `This wallet is only connected to the ${this.network} network and cannot perform actions on the ${network} network`
+            );
         }
     }
 }

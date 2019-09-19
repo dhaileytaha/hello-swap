@@ -13,7 +13,6 @@ import { formatEther, parseEther } from "ethers/utils";
 import { BitcoinWallet } from "./bitcoinWallet";
 import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
-import LedgerActionHandler from "./ledgerActions";
 import { setupBitcoin, setupEthereum } from "./setup/setup";
 
 const BITCOIND_P2P_URI = "127.0.0.1:18444";
@@ -40,16 +39,11 @@ async function startApp(
         );
     }
 
-    const ledgerActionHandler = new LedgerActionHandler(
-        bitcoinWallet,
-        ethereumWallet
-    );
-
     const app = new HelloSwap(
         cndUrl,
-        ethereumWallet.getAccount(),
         whoAmI,
-        ledgerActionHandler,
+        bitcoinWallet,
+        ethereumWallet,
         () => true
     );
     console.log(`[${whoAmI}] Started:`, await app.cndPeerId());

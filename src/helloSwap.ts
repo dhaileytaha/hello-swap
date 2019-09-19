@@ -1,9 +1,12 @@
 import changeCase from "change-case";
+import colors from "colors";
+import { BigNumber } from "ethers/utils";
 import moment from "moment";
 import { Action, EmbeddedRepresentationSubEntity, Field } from "../gen/siren";
 import { PropertiesOfASWAP } from "../gen/swap";
+import { BitcoinWallet } from "./bitcoinWallet";
 import { Cnd, LedgerAction } from "./cnd";
-import LedgerActionHandler from "./ledgerActions";
+import { EthereumWallet } from "./ethereumWallet";
 
 export interface Asset {
     name: string;
@@ -47,34 +50,26 @@ export class HelloSwap {
         };
     }
     private readonly cnd: Cnd;
-    private readonly ethereumAddress: string;
-    private readonly whoAmI: string;
-    private readonly ledgerActionHandler: LedgerActionHandler;
-    private readonly acceptPredicate: (swap: Swap) => boolean;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
 
     /**
      * new HelloSwap()
      * @param cndUrl The url to cnd REST API
-     * @param ethereumAddress The Ethereum address, to use to receive Ether.
      * @param whoAmI A name for logging purposes only
-     * @param ledgerActionHandler To handle all blockchain actions
+     * @param bitcoinWallet
+     * @param ethereumWallet
      * @param acceptPredicate If it returns true the swap is accepted, otherwise it is declined.
      */
     public constructor(
         cndUrl: string,
-        ethereumAddress: string,
-        whoAmI: string,
-        ledgerActionHandler: LedgerActionHandler,
-        acceptPredicate: (swap: Swap) => boolean
+        private readonly whoAmI: string,
+        private readonly bitcoinWallet: BitcoinWallet,
+        private readonly ethereumWallet: EthereumWallet,
+        private readonly acceptPredicate: (swap: Swap) => boolean
     ) {
         this.cnd = new Cnd(cndUrl);
-        this.ethereumAddress = ethereumAddress;
-        this.whoAmI = whoAmI;
-        this.ledgerActionHandler = ledgerActionHandler;
         this.actionsDone = [];
-        this.acceptPredicate = acceptPredicate;
 
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
@@ -147,7 +142,7 @@ export class HelloSwap {
                 name: "ether",
                 quantity: wei,
             },
-            beta_ledger_redeem_identity: this.ethereumAddress,
+            beta_ledger_redeem_identity: this.ethereumWallet.getAccount(),
             alpha_expiry: moment().unix() + 7200,
             beta_expiry: moment().unix() + 3600,
             peer: {
@@ -171,7 +166,7 @@ export class HelloSwap {
         const actions = swapDetails.actions;
         const acceptAction = actions!.find(action => action.name === "accept");
 
-        return this.cnd.postAccept(acceptAction!, this.ethereumAddress);
+        return this.cnd.executeAction(acceptAction!, this.fieldValueResolver);
     }
 
     private async declineSwap(swap: Swap) {
@@ -181,7 +176,7 @@ export class HelloSwap {
             action => action.name === "decline"
         );
 
-        return this.cnd.postAction(declineAction!);
+        return this.cnd.executeAction(declineAction!);
     }
 
     private async getNewSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {
@@ -195,31 +190,6 @@ export class HelloSwap {
                 })
             );
         });
-    }
-
-    private async doLedgerAction(action: LedgerAction) {
-        switch (action.type) {
-            case "bitcoin-broadcast-signed-transaction": {
-                return this.ledgerActionHandler.doBitcoinBroadcastSignedTransaction(
-                    action.payload
-                );
-            }
-            case "bitcoin-send-amount-to-address": {
-                return this.ledgerActionHandler.doBitcoinSendAmountToAddress(
-                    action.payload
-                );
-            }
-            case "ethereum-call-contract": {
-                return this.ledgerActionHandler.doEthereumCallContract(
-                    action.payload
-                );
-            }
-            case "ethereum-deploy-contract": {
-                return this.ledgerActionHandler.doEthereumDeployContract(
-                    action.payload
-                );
-            }
-        }
     }
 
     private async getOngoingSwaps(): Promise<
@@ -237,38 +207,128 @@ export class HelloSwap {
         });
     }
 
-    private performNextLedgerAction(entity: EmbeddedRepresentationSubEntity) {
+    private async performNextLedgerAction(
+        entity: EmbeddedRepresentationSubEntity
+    ) {
         const swap = HelloSwap.toSwap(entity);
 
         const action = entity.actions!.find((action: Action) => {
             return action.name === "fund" || action.name === "redeem";
         })!;
 
-        const data: any = {};
-        if (action.fields && action.fields.length) {
-            action.fields.forEach((field: Field) => {
-                data[field.name] = this.ledgerActionHandler.getData(field);
-            });
+        const response = await this.cnd.executeAction(
+            action,
+            this.fieldValueResolver
+        );
+
+        // This heuristic should is bad, should check content-type once it exists: https://github.com/comit-network/comit-rs/issues/992
+        if (response.data && response.data.type && response.data.payload) {
+            const ledgerAction: LedgerAction = response.data;
+
+            const stringAction = JSON.stringify(ledgerAction);
+            if (this.actionsDone.indexOf(stringAction) === -1) {
+                this.actionsDone.push(stringAction);
+                console.log(
+                    `[${this.whoAmI}] ${changeCase.titleCase(action.name)}ing ${
+                        action.name === "fund"
+                            ? swap.sellAsset.name
+                            : swap.buyAsset.name
+                    } for`,
+                    JSON.stringify(swap.id)
+                );
+                return this.doLedgerAction(ledgerAction);
+            }
+        }
+    }
+
+    private async fieldValueResolver(
+        field: Field
+    ): Promise<string | undefined> {
+        const classes: string[] = field.class;
+
+        if (classes.includes("bitcoin") && classes.includes("address")) {
+            return Promise.resolve(this.bitcoinWallet.getAddress());
         }
 
-        return this.cnd
-            .getAction(action.href, data)
-            .then((ledgerAction: LedgerAction) => {
-                const stringAction = JSON.stringify(ledgerAction);
-                if (this.actionsDone.indexOf(stringAction) === -1) {
-                    this.actionsDone.push(stringAction);
-                    console.log(
-                        `[${this.whoAmI}] ${changeCase.titleCase(
-                            action.name
-                        )}ing ${
-                            action.name === "fund"
-                                ? swap.sellAsset.name
-                                : swap.buyAsset.name
-                        } for`,
-                        JSON.stringify(swap.id)
-                    );
-                    return this.doLedgerAction(ledgerAction);
-                }
-            });
+        if (classes.includes("bitcoin") && classes.includes("feePerWU")) {
+            // should probably be dynamic in a real application
+            return Promise.resolve("150");
+        }
+
+        if (classes.includes("ethereum") && classes.includes("address")) {
+            return Promise.resolve(this.ethereumWallet.getAccount());
+        }
+    }
+
+    private async doLedgerAction(action: LedgerAction) {
+        switch (action.type) {
+            case "bitcoin-broadcast-signed-transaction": {
+                const { hex, network } = action.payload;
+
+                const response = await this.bitcoinWallet.broadcastTransaction(
+                    hex,
+                    network
+                );
+
+                console.log(
+                    colors.grey(
+                        "[trace] Bitcoin Broadcast Signed Transaction response:"
+                    ),
+                    colors.grey(JSON.stringify(response))
+                );
+
+                return response;
+            }
+            case "bitcoin-send-amount-to-address": {
+                const { to, amount, network } = action.payload;
+                const sats = parseInt(amount, 10);
+
+                const response = this.bitcoinWallet.sendToAddress(
+                    to,
+                    sats,
+                    network
+                );
+
+                console.log(
+                    colors.grey("[trace] Bitcoin Send To Address response:"),
+                    colors.grey(JSON.stringify(response))
+                );
+
+                return response;
+            }
+            case "ethereum-call-contract": {
+                const { data, contract_address, gas_limit } = action.payload;
+
+                const response = await this.ethereumWallet.callContract(
+                    data,
+                    contract_address,
+                    gas_limit
+                );
+
+                console.log(
+                    colors.grey("[trace] Ethereum Call Contract response:"),
+                    colors.grey(JSON.stringify(response))
+                );
+
+                return response;
+            }
+            case "ethereum-deploy-contract": {
+                const { amount, data, gas_limit } = action.payload;
+                const value = new BigNumber(amount);
+
+                const response = await this.ethereumWallet.deployContract(
+                    data,
+                    value,
+                    gas_limit
+                );
+
+                console.log(
+                    colors.grey("[trace] Ethereum Deploy Contract response:"),
+                    colors.grey(JSON.stringify(response))
+                );
+
+                return response;
+            }
+        }
     }
 }

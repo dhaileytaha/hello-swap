@@ -1,9 +1,4 @@
-/// <reference path="./bcoin.d.ts" />
-
-import bcoin from "bcoin";
-import Amount from "bcoin/lib/btc/amount";
-import TX from "bcoin/lib/primitives/tx";
-import WalletDB from "bcoin/lib/wallet/WalletDB";
+import { Amount, Chain, Pool, TX, WalletDB } from "bcoin";
 import Logger from "blgr";
 
 export class BitcoinWallet {
@@ -26,12 +21,12 @@ export class BitcoinWallet {
             logger: this.logger,
         });
         this.network = network;
-        this.chain = new bcoin.Chain({
+        this.chain = new Chain({
             spv: true,
             network,
             logger: this.logger,
         });
-        this.pool = new bcoin.Pool({
+        this.pool = new Pool({
             chain: this.chain,
             network,
             logger: this.logger,

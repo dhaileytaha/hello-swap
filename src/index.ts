@@ -7,9 +7,8 @@
  * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
  */
 
+import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther, parseEther } from "ethers/utils";
-import { BitcoinWallet } from "./bitcoinWallet";
-import { EthereumWallet } from "./ethereumWallet";
 import { HelloSwap } from "./helloSwap";
 import { setupBitcoin, setupEthereum } from "./setup/setup";
 

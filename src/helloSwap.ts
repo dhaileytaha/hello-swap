@@ -1,19 +1,20 @@
 import changeCase from "change-case";
 import colors from "colors";
-import { BigNumber } from "ethers/utils";
+import {
+    Action,
+    Asset,
+    BigNumber,
+    BitcoinWallet,
+    Cnd,
+    EmbeddedRepresentationSubEntity,
+    EthereumWallet,
+    Field,
+    LedgerAction,
+    Swap,
+} from "comit-sdk";
 import moment from "moment";
-import { Action, EmbeddedRepresentationSubEntity, Field } from "../gen/siren";
-import { PropertiesOfASWAP } from "../gen/swap";
-import { BitcoinWallet } from "./bitcoinWallet";
-import { Cnd, LedgerAction } from "./cnd";
-import { EthereumWallet } from "./ethereumWallet";
 
-export interface Asset {
-    name: string;
-    quantity: string;
-}
-
-export interface Swap {
+export interface SimpleSwap {
     id: string;
     counterparty: string;
     buyAsset: Asset;
@@ -25,8 +26,8 @@ export interface Swap {
  * Can initiate a swap request.
  */
 export class HelloSwap {
-    private static toSwap(entity: EmbeddedRepresentationSubEntity): Swap {
-        const swapProperties = entity.properties as PropertiesOfASWAP;
+    private static toSwap(entity: EmbeddedRepresentationSubEntity): SimpleSwap {
+        const swapProperties = entity.properties as Swap;
         const buyAsset =
             swapProperties.role === "Alice"
                 ? swapProperties.parameters.beta_asset
@@ -66,7 +67,7 @@ export class HelloSwap {
         private readonly whoAmI: string,
         private readonly bitcoinWallet: BitcoinWallet,
         private readonly ethereumWallet: EthereumWallet,
-        private readonly acceptPredicate: (swap: Swap) => boolean
+        private readonly acceptPredicate: (swap: SimpleSwap) => boolean
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
@@ -161,7 +162,7 @@ export class HelloSwap {
         clearInterval(this.interval);
     }
 
-    private async acceptSwap(swap: Swap) {
+    private async acceptSwap(swap: SimpleSwap) {
         const swapDetails = await this.cnd.getSwap(swap.id);
         const actions = swapDetails.actions;
         const acceptAction = actions!.find(action => action.name === "accept");
@@ -169,7 +170,7 @@ export class HelloSwap {
         return this.cnd.executeAction(acceptAction!, this.fieldValueResolver);
     }
 
-    private async declineSwap(swap: Swap) {
+    private async declineSwap(swap: SimpleSwap) {
         const swapDetails = await this.cnd.getSwap(swap.id);
         const actions = swapDetails.actions;
         const declineAction = actions!.find(

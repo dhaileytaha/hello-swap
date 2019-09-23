@@ -15,29 +15,15 @@ import {
 import { formatUnits } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
+import { Coin, CoinType, Offer, OrderBook } from "./orderBook";
+
+export { CoinType } from "./orderBook";
 
 export interface SimpleSwap {
     id: string;
     counterparty: string;
     buyAsset: Asset;
     sellAsset: Asset;
-}
-
-export interface Offer {
-    sellCoin: Coin;
-    buyCoin: Coin;
-    makerPeerId: string;
-    makerPeerAddress: string;
-}
-
-export enum CoinType {
-    Bitcoin = "bitcoin",
-    Ether = "ether",
-}
-
-export interface Coin {
-    coin: CoinType;
-    amount: number;
 }
 
 /**
@@ -72,7 +58,7 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
-    private offersMade: Offer[];
+    private offersMade: OrderBook;
 
     /**
      * new HelloSwap()
@@ -91,7 +77,7 @@ export class HelloSwap {
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
-        this.offersMade = [];
+        this.offersMade = new OrderBook();
 
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
@@ -150,6 +136,10 @@ export class HelloSwap {
             );
         }
 
+        console.log(
+            `[${this.whoAmI}] Creating offer to sell ${sellCoin} for ${buyCoin}`
+        );
+
         const offer = {
             sellCoin,
             buyCoin,
@@ -157,7 +147,7 @@ export class HelloSwap {
             makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
         };
 
-        this.offersMade.push(offer);
+        this.offersMade.addOffer(offer);
 
         return offer;
     }
@@ -168,7 +158,10 @@ export class HelloSwap {
         makerPeerId,
         makerPeerAddress,
     }: Offer) {
-        console.log(`[${this.whoAmI}] Sending swap request`);
+        console.log(
+            `[${this.whoAmI}] Taking offer to buy ${sellCoin} for ${buyCoin}`
+        );
+
         const swap = {
             alpha_ledger: {
                 name: "bitcoin",

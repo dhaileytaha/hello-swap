@@ -12,6 +12,7 @@ import {
     LedgerAction,
     Swap,
 } from "comit-sdk";
+import { formatUnits } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
 
@@ -183,7 +184,7 @@ export class HelloSwap {
             },
             beta_asset: {
                 name: sellCoin.coin,
-                quantity: sellCoin.amount.toString(),
+                quantity: formatUnits(sellCoin.amount.toString(), "ether"),
             },
             beta_ledger_redeem_identity: this.ethereumWallet.getAccount(),
             alpha_expiry: moment().unix() + 7200,

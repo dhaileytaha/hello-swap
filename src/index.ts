@@ -19,7 +19,7 @@ import { setupBitcoin, setupEthereum } from "./setup/setup";
     const offer = await maker.app.createOffer(
         {
             coin: CoinType.Ether,
-            amount: 9000000000000000000,
+            amount: 9,
         },
         {
             coin: CoinType.Bitcoin,

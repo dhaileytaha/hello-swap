@@ -13,6 +13,7 @@ import {
     Swap,
 } from "comit-sdk";
 import moment from "moment";
+import { toSatoshi } from "satoshi-bitcoin-ts";
 
 export interface SimpleSwap {
     id: string;
@@ -178,7 +179,7 @@ export class HelloSwap {
             },
             alpha_asset: {
                 name: buyCoin.coin,
-                quantity: buyCoin.amount.toString(),
+                quantity: toSatoshi(buyCoin.amount).toString(),
             },
             beta_asset: {
                 name: sellCoin.coin,

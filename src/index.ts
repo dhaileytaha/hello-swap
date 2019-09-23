@@ -23,7 +23,7 @@ import { setupBitcoin, setupEthereum } from "./setup/setup";
         },
         {
             coin: CoinType.Bitcoin,
-            amount: 100000000,
+            amount: 1,
         }
     );
 

@@ -10,24 +10,36 @@
 import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther, parseEther } from "ethers/utils";
 import { CoinType, HelloSwap } from "./helloSwap";
+import { OrderBook } from "./orderBook";
 import { setupBitcoin, setupEthereum } from "./setup/setup";
 
 (async function main() {
+    const orderBook = new OrderBook();
+
     const maker = await startApp("maker", "http://localhost:8001", 0, "10");
     const taker = await startApp("taker", "http://localhost:8000", 2, "0.01");
 
-    const offer = await maker.app.createOffer(
+    // Maker creates and publishes offer
+    const makerOffer = await maker.app.createOffer(
         {
             coin: CoinType.Ether,
-            amount: 9,
+            amount: 10,
         },
         {
             coin: CoinType.Bitcoin,
             amount: 1,
-        }
+        },
+        0.1
     );
+    orderBook.addOffer(makerOffer);
 
-    await taker.app.takeOffer(offer);
+    // Taker finds offer
+    const foundOffers = orderBook.findOffers(
+        CoinType.Ether,
+        CoinType.Bitcoin,
+        5
+    );
+    await taker.app.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly
 

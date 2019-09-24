@@ -15,7 +15,7 @@ import {
 import { formatUnits } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
-import { Coin, CoinType, Offer, OrderBook } from "./orderBook";
+import { Coin, CoinType, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
 
@@ -58,7 +58,7 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
-    private offersMade: OrderBook;
+    private offersMade: Offer[];
 
     /**
      * new HelloSwap()
@@ -77,7 +77,7 @@ export class HelloSwap {
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
-        this.offersMade = new OrderBook();
+        this.offersMade = [];
 
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
@@ -126,7 +126,11 @@ export class HelloSwap {
         return this.cnd.getPeerId();
     }
 
-    public async createOffer(sellCoin: Coin, buyCoin: Coin): Promise<Offer> {
+    public async createOffer(
+        sellCoin: Coin,
+        buyCoin: Coin,
+        rate: number
+    ): Promise<Offer> {
         if (
             sellCoin.coin !== CoinType.Ether ||
             buyCoin.coin !== CoinType.Bitcoin
@@ -143,11 +147,12 @@ export class HelloSwap {
         const offer = {
             sellCoin,
             buyCoin,
+            rate,
             makerPeerId: await this.cnd.getPeerId(),
             makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
         };
 
-        this.offersMade.addOffer(offer);
+        this.offersMade.push(offer);
 
         return offer;
     }
@@ -159,7 +164,7 @@ export class HelloSwap {
         makerPeerAddress,
     }: Offer) {
         console.log(
-            `[${this.whoAmI}] Taking offer to buy ${sellCoin} for ${buyCoin}`
+            `[${this.whoAmI}] Taking offer to buy ${buyCoin} for ${sellCoin}`
         );
 
         const swap = {
@@ -172,12 +177,12 @@ export class HelloSwap {
                 network: "regtest",
             },
             alpha_asset: {
-                name: buyCoin.coin,
-                quantity: toSatoshi(buyCoin.amount).toString(),
+                name: sellCoin.coin,
+                quantity: toSatoshi(sellCoin.amount).toString(),
             },
             beta_asset: {
-                name: sellCoin.coin,
-                quantity: formatUnits(sellCoin.amount.toString(), "ether"),
+                name: buyCoin.coin,
+                quantity: formatUnits(buyCoin.amount.toString(), "ether"),
             },
             beta_ledger_redeem_identity: this.ethereumWallet.getAccount(),
             alpha_expiry: moment().unix() + 7200,

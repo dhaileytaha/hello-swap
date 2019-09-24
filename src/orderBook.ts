@@ -1,7 +1,6 @@
 export interface Offer {
     sellCoin: Coin;
     buyCoin: Coin;
-    rate: number;
     makerPeerId: string;
     makerPeerAddress: string;
 }
@@ -53,13 +52,14 @@ export class OrderBook {
                     ...offer,
                     sellCoin: {
                         ...offer.buyCoin,
-                        amount: offer.rate * buyAmount,
+                        amount:
+                            (offer.buyCoin.amount / offer.sellCoin.amount) *
+                            buyAmount,
                     },
                     buyCoin: {
                         ...offer.sellCoin,
                         amount: buyAmount,
                     },
-                    rate: 1 / offer.rate,
                 };
             });
     }

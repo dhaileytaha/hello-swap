@@ -126,11 +126,7 @@ export class HelloSwap {
         return this.cnd.getPeerId();
     }
 
-    public async createOffer(
-        sellCoin: Coin,
-        buyCoin: Coin,
-        rate: number
-    ): Promise<Offer> {
+    public async createOffer(sellCoin: Coin, buyCoin: Coin): Promise<Offer> {
         if (
             sellCoin.coin !== CoinType.Ether ||
             buyCoin.coin !== CoinType.Bitcoin
@@ -147,7 +143,6 @@ export class HelloSwap {
         const offer = {
             sellCoin,
             buyCoin,
-            rate,
             makerPeerId: await this.cnd.getPeerId(),
             makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
         };

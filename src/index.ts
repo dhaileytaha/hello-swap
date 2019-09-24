@@ -28,8 +28,7 @@ import { setupBitcoin, setupEthereum } from "./setup/setup";
         {
             coin: CoinType.Bitcoin,
             amount: 1,
-        },
-        0.1
+        }
     );
     orderBook.addOffer(makerOffer);
 

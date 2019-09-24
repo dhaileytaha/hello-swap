@@ -12,7 +12,6 @@ describe("OrderBook tests", () => {
                 coin: CoinType.Bitcoin,
                 amount: 1,
             },
-            rate: 0.1,
             makerPeerId: "peerID",
             makerPeerAddress: "/ip4/127.0.0.1/tcp/1337",
         };
@@ -36,7 +35,6 @@ describe("OrderBook tests", () => {
                 coin: offer.buyCoin.coin,
                 amount: 0.5,
             },
-            rate: 10,
             makerPeerId: offer.makerPeerId,
             makerPeerAddress: offer.makerPeerAddress,
         });

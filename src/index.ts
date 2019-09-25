@@ -72,7 +72,7 @@ async function startApp(whoAmI: string, index: number) {
     );
 
     const app = new HelloSwap(
-        `http://localhost:${process.env[`HTTP_PORT_CND_${index}`]!}`,
+        process.env[`HTTP_URL_CND_${index}`]!,
         whoAmI,
         bitcoinWallet,
         ethereumWallet,

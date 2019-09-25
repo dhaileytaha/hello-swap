@@ -132,12 +132,16 @@ export class HelloSwap {
             buyCoin.coin !== CoinType.Bitcoin
         ) {
             throw new Error(
-                `Offering to sell ${sellCoin.coin} to buy ${buyCoin.coin} is not supported`
+                `Offering to sell ${JSON.stringify(
+                    sellCoin.coin
+                )} to buy ${JSON.stringify(buyCoin.coin)} is not supported`
             );
         }
 
         console.log(
-            `[${this.whoAmI}] Creating offer to sell ${sellCoin} for ${buyCoin}`
+            `[${this.whoAmI}] Creating offer to sell ${JSON.stringify(
+                sellCoin
+            )} for ${JSON.stringify(buyCoin)}`
         );
 
         const offer = {
@@ -159,7 +163,9 @@ export class HelloSwap {
         makerPeerAddress,
     }: Offer) {
         console.log(
-            `[${this.whoAmI}] Taking offer to buy ${buyCoin} for ${sellCoin}`
+            `[${this.whoAmI}] Taking offer to buy ${JSON.stringify(
+                buyCoin
+            )} for ${JSON.stringify(sellCoin)}`
         );
 
         const swap = {

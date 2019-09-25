@@ -12,12 +12,7 @@ import {
     LedgerAction,
     Swap,
 } from "comit-sdk";
-import { formatUnits } from "ethers/utils";
 import moment from "moment";
-import { toSatoshi } from "satoshi-bitcoin-ts";
-import { Coin, CoinType, Offer } from "./orderBook";
-
-export { CoinType } from "./orderBook";
 
 export interface SimpleSwap {
     id: string;
@@ -58,7 +53,6 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
-    private offersMade: Offer[];
 
     /**
      * new HelloSwap()
@@ -77,7 +71,6 @@ export class HelloSwap {
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
-        this.offersMade = [];
 
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
@@ -126,42 +119,13 @@ export class HelloSwap {
         return this.cnd.getPeerId();
     }
 
-    public async createOffer(sellCoin: Coin, buyCoin: Coin): Promise<Offer> {
-        if (
-            sellCoin.coin !== CoinType.Ether ||
-            buyCoin.coin !== CoinType.Bitcoin
-        ) {
-            throw new Error(
-                `Offering to sell ${sellCoin.coin} to buy ${buyCoin.coin} is not supported`
-            );
-        }
-
-        console.log(
-            `[${this.whoAmI}] Creating offer to sell ${sellCoin} for ${buyCoin}`
-        );
-
-        const offer = {
-            sellCoin,
-            buyCoin,
-            makerPeerId: await this.cnd.getPeerId(),
-            makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
-        };
-
-        this.offersMade.push(offer);
-
-        return offer;
-    }
-
-    public takeOffer({
-        sellCoin,
-        buyCoin,
-        makerPeerId,
-        makerPeerAddress,
-    }: Offer) {
-        console.log(
-            `[${this.whoAmI}] Taking offer to buy ${buyCoin} for ${sellCoin}`
-        );
-
+    public makeOfferSellBtcBuyEth(
+        sats: string,
+        wei: string,
+        peerId: string,
+        peerAddress: string
+    ) {
+        console.log(`[${this.whoAmI}] Sending offer to:`, peerId);
         const swap = {
             alpha_ledger: {
                 name: "bitcoin",
@@ -172,19 +136,19 @@ export class HelloSwap {
                 network: "regtest",
             },
             alpha_asset: {
-                name: sellCoin.coin,
-                quantity: toSatoshi(sellCoin.amount).toString(),
+                name: "bitcoin",
+                quantity: sats,
             },
             beta_asset: {
-                name: buyCoin.coin,
-                quantity: formatUnits(buyCoin.amount.toString(), "ether"),
+                name: "ether",
+                quantity: wei,
             },
             beta_ledger_redeem_identity: this.ethereumWallet.getAccount(),
             alpha_expiry: moment().unix() + 7200,
             beta_expiry: moment().unix() + 3600,
             peer: {
-                peer_id: makerPeerId,
-                address_hint: makerPeerAddress,
+                peer_id: peerId,
+                address_hint: peerAddress,
             },
         };
 
@@ -203,9 +167,7 @@ export class HelloSwap {
         const actions = swapDetails.actions;
         const acceptAction = actions!.find(action => action.name === "accept");
 
-        return this.cnd.executeAction(acceptAction!, (field: Field) =>
-            this.fieldValueResolver(field)
-        );
+        return this.cnd.executeAction(acceptAction!, this.fieldValueResolver);
     }
 
     private async declineSwap(swap: SimpleSwap) {
@@ -255,11 +217,12 @@ export class HelloSwap {
             return action.name === "fund" || action.name === "redeem";
         })!;
 
-        const response = await this.cnd.executeAction(action, (field: Field) =>
-            this.fieldValueResolver(field)
+        const response = await this.cnd.executeAction(
+            action,
+            this.fieldValueResolver
         );
 
-        // This heuristic is bad, should check content-type once it exists: https://github.com/comit-network/comit-rs/issues/992
+        // This heuristic should is bad, should check content-type once it exists: https://github.com/comit-network/comit-rs/issues/992
         if (response.data && response.data.type && response.data.payload) {
             const ledgerAction: LedgerAction = response.data;
 
@@ -321,7 +284,7 @@ export class HelloSwap {
                 const { to, amount, network } = action.payload;
                 const sats = parseInt(amount, 10);
 
-                const response = await this.bitcoinWallet.sendToAddress(
+                const response = this.bitcoinWallet.sendToAddress(
                     to,
                     sats,
                     network

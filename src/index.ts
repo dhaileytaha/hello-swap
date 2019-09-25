@@ -1,23 +1,13 @@
-/** Orchestrate the hello swap apps
- * Start 2 instances of helloSwap
- * "Link" them together. eg extract PeerId etc.
- * Call "sendSwap()" on one instance which is going to trigger a swap query
- * Assumptions:
- * - Use internal bitcoind wallet, simple utxo manipulation
- * - Use Parity dev wallet to fund 2 wallets, could be replaced with Ethereum wallet: https://github.com/coblox/bobtimus/issues/78
- */
-
 import { BitcoinWallet, EthereumWallet } from "comit-sdk";
-import { formatEther, parseEther } from "ethers/utils";
+import { formatEther } from "ethers/utils";
 import { CoinType, HelloSwap } from "./helloSwap";
 import { OrderBook } from "./orderBook";
-import { setupBitcoin, setupEthereum } from "./setup/setup";
 
 (async function main() {
     const orderBook = new OrderBook();
 
-    const maker = await startApp("maker", "http://localhost:8001", 0, "10");
-    const taker = await startApp("taker", "http://localhost:8000", 2, "0.01");
+    const maker = await startApp("maker", 0);
+    const taker = await startApp("taker", 1);
 
     // Maker creates and publishes offer
     const makerOffer = await maker.app.createOffer(
@@ -68,32 +58,21 @@ import { setupBitcoin, setupEthereum } from "./setup/setup";
     process.on("SIGUSR2", exitHandler);
 })();
 
-const BITCOIND_P2P_URI = "127.0.0.1:18444";
-
-// TODO: Funding should be handled by the create-comit-app
-async function startApp(
-    whoAmI: string,
-    cndUrl: string,
-    startBitcoin: number,
-    startEther: string
-) {
-    const bitcoinWallet = new BitcoinWallet("regtest");
-    await bitcoinWallet.init(BITCOIND_P2P_URI);
+async function startApp(whoAmI: string, index: number) {
+    const bitcoinWallet = await BitcoinWallet.newInstance(
+        "regtest",
+        process.env.BITCOIN_P2P_URI!,
+        process.env[`BITCOIN_HD_KEY_${index}`]!
+    );
     await new Promise(r => setTimeout(r, 1000));
-    if (startBitcoin) {
-        await setupBitcoin(await bitcoinWallet.getAddress(), startBitcoin);
-        await new Promise(r => setTimeout(r, 10000));
-    }
-    const ethereumWallet = new EthereumWallet();
-    if (startEther) {
-        await setupEthereum(
-            ethereumWallet.getAccount(),
-            parseEther(startEther)
-        );
-    }
+
+    const ethereumWallet = new EthereumWallet(
+        process.env[`ETHEREUM_KEY_${index}`]!,
+        process.env.ETHEREUM_NODE_HTTP_URL!
+    );
 
     const app = new HelloSwap(
-        cndUrl,
+        process.env[`HTTP_URL_CND_${index}`]!,
         whoAmI,
         bitcoinWallet,
         ethereumWallet,

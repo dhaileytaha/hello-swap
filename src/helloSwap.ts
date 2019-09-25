@@ -59,6 +59,7 @@ export class HelloSwap {
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
     private offersMade: Offer[];
+    private swapsDone: string[];
 
     /**
      * new HelloSwap()
@@ -78,10 +79,19 @@ export class HelloSwap {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
         this.offersMade = [];
+        this.swapsDone = [];
+
+        // Store swapped already finished in case of a re-run with same cnd.
+        this.getDoneSwaps().then((swaps: EmbeddedRepresentationSubEntity[]) => {
+            swaps.forEach((swap: EmbeddedRepresentationSubEntity) => {
+                this.swapsDone.push(swap.properties!.id);
+            });
+        });
 
         // On an interval:
         // 1. Get all swaps that can be accepted, use `this.acceptPredicate` to accept or decline them
         // 2. Get all swaps that can be funded or redeemed and perform the corresponding action using a wallet
+        // 3. Check any new swap that finishes to alert user
         // @ts-ignore
         this.interval = setInterval(() => {
             this.getNewSwaps().then(
@@ -117,6 +127,22 @@ export class HelloSwap {
                     swaps.forEach((swap: EmbeddedRepresentationSubEntity) =>
                         this.performNextLedgerAction(swap)
                     );
+                }
+            );
+
+            this.getDoneSwaps().then(
+                (swaps: EmbeddedRepresentationSubEntity[]) => {
+                    swaps.forEach((swap: EmbeddedRepresentationSubEntity) => {
+                        const props = swap.properties!;
+                        const id = props.id;
+                        if (this.swapsDone.indexOf(props.id) === -1) {
+                            console.log(
+                                `[${this.whoAmI}] Swap finished with status ${props.status}: ${id}`
+                            );
+
+                            this.swapsDone.push(id);
+                        }
+                    });
                 }
             );
         }, 2000);
@@ -226,7 +252,6 @@ export class HelloSwap {
 
     private async getNewSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {
         const swaps = await this.cnd.getSwaps();
-
         return swaps.filter((swap: EmbeddedRepresentationSubEntity) => {
             return (
                 swap.actions &&
@@ -248,6 +273,18 @@ export class HelloSwap {
                 !!swap.actions.find((action: Action) => {
                     return action.name === "fund" || action.name === "redeem";
                 })
+            );
+        });
+    }
+
+    private async getDoneSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {
+        const swaps = await this.cnd.getSwaps();
+        return swaps.filter((swap: EmbeddedRepresentationSubEntity) => {
+            return (
+                swap.properties &&
+                (swap.properties.status === "SWAPPED" ||
+                    swap.properties.status === "NOT_SWAPPED" ||
+                    swap.properties.status === "INTERNAL_FAILURE")
             );
         });
     }

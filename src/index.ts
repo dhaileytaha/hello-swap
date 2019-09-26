@@ -64,7 +64,7 @@ async function startApp(whoAmI: string, index: number) {
         process.env.BITCOIN_P2P_URI!,
         process.env[`BITCOIN_HD_KEY_${index}`]!
     );
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 3000));
 
     const ethereumWallet = new EthereumWallet(
         process.env[`ETHEREUM_KEY_${index}`]!,

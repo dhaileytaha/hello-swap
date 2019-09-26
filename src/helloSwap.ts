@@ -317,7 +317,13 @@ export class HelloSwap {
                     } for`,
                     JSON.stringify(swap.id)
                 );
-                return this.doLedgerAction(ledgerAction);
+                const res = await this.doLedgerAction(ledgerAction);
+                if (!res) {
+                    console.log(
+                        colors.grey("[trace] Ledger action failed:"),
+                        colors.grey(JSON.stringify(res))
+                    );
+                }
             }
         }
     }

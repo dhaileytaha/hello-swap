@@ -15,7 +15,7 @@ import {
 import { parseEther } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
-import { Coin, CoinType, Offer } from "./orderBook";
+import { CoinType, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
 
@@ -152,34 +152,40 @@ export class HelloSwap {
         return this.cnd.getPeerId();
     }
 
-    public async createOffer(sellCoin: Coin, buyCoin: Coin): Promise<Offer> {
-        if (
-            sellCoin.coin !== CoinType.Ether ||
-            buyCoin.coin !== CoinType.Bitcoin
-        ) {
-            throw new Error(
-                `Offering to sell ${JSON.stringify(
-                    sellCoin.coin
-                )} to buy ${JSON.stringify(buyCoin.coin)} is not supported`
+    public async createOffers(): Promise<Offer[]> {
+        const sellCoin = {
+            coin: CoinType.Ether,
+            amount: 1,
+        };
+        const peerId = await this.cnd.getPeerId();
+
+        const offers = [];
+        for (let i = 0; i < 5; i++) {
+            const rate = coinMarketCap();
+
+            const buyCoin = {
+                coin: CoinType.Bitcoin,
+                amount: rate,
+            };
+
+            console.log(
+                `[${this.whoAmI}] Creating offer to sell ${JSON.stringify(
+                    sellCoin
+                )} for ${JSON.stringify(buyCoin)}`
             );
+
+            const offer = {
+                sellCoin,
+                buyCoin,
+                makerPeerId: peerId,
+                makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
+            };
+
+            this.offersMade.push(offer);
+            offers.push(offer);
         }
 
-        console.log(
-            `[${this.whoAmI}] Creating offer to sell ${JSON.stringify(
-                sellCoin
-            )} for ${JSON.stringify(buyCoin)}`
-        );
-
-        const offer = {
-            sellCoin,
-            buyCoin,
-            makerPeerId: await this.cnd.getPeerId(),
-            makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
-        };
-
-        this.offersMade.push(offer);
-
-        return offer;
+        return offers;
     }
 
     public takeOffer({
@@ -418,4 +424,8 @@ export class HelloSwap {
             }
         }
     }
+}
+
+function coinMarketCap(): number {
+    return Math.random() * 0.01 + 0.015;
 }

@@ -1,7 +1,7 @@
 import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther } from "ethers/utils";
 import fs from "fs";
-import { CoinType, HelloSwap } from "./helloSwap";
+import { HelloSwap } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
@@ -11,17 +11,10 @@ import { OrderBook } from "./orderBook";
     const taker = await startApp("taker", 1);
 
     // Maker creates and publishes offer
-    const makerOffer = await maker.app.createOffer(
-        {
-            coin: CoinType.Ether,
-            amount: 10,
-        },
-        {
-            coin: CoinType.Bitcoin,
-            amount: 1,
-        }
-    );
-    orderBook.addOffer(makerOffer);
+    const makerOffers = await maker.app.createOffers();
+    for (const offer of makerOffers) {
+        orderBook.addOffer(offer);
+    }
 
     // Taker finds offer
     const foundOffer = orderBook.findOffer();

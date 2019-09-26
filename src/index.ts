@@ -23,11 +23,12 @@ import { OrderBook } from "./orderBook";
     orderBook.addOffer(makerOffer);
 
     // Taker finds offer
-    const foundOffers = orderBook.findOffers(
-        CoinType.Ether,
-        CoinType.Bitcoin,
-        5
-    );
+    const foundOffers = orderBook.findOffers({
+        buyCoin: CoinType.Ether,
+        sellCoin: CoinType.Bitcoin,
+        buyAmount: 5,
+    });
+    console.log(`[taker] ${foundOffers.length} offer(s) found.`);
     await taker.app.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly

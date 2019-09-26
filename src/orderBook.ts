@@ -15,6 +15,12 @@ export interface Coin {
     amount: number;
 }
 
+export interface FindOfferQuery {
+    buyCoin: CoinType;
+    sellCoin: CoinType;
+    buyAmount: number;
+}
+
 export class OrderBook {
     private readonly offers: Offer[];
 
@@ -23,7 +29,17 @@ export class OrderBook {
     }
 
     public addOffer(offer: Offer) {
-        this.offers.push(offer);
+        const offerToPublish = {
+            ...offer,
+            sellCoin: {
+                ...offer.buyCoin,
+            },
+            buyCoin: {
+                ...offer.sellCoin,
+            },
+        };
+
+        this.offers.push(offerToPublish);
     }
 
     /**
@@ -35,29 +51,29 @@ export class OrderBook {
      * @param sellCoin: the coin requester wants to sell
      * @param buyAmount: the amount requester wants to buy
      */
-    public findOffers(
-        buyCoin: CoinType,
-        sellCoin: CoinType,
-        buyAmount: number
-    ): Offer[] {
+    public findOffers({
+        buyCoin,
+        sellCoin,
+        buyAmount,
+    }: FindOfferQuery): Offer[] {
         return this.offers
             .filter(
                 offer =>
-                    offer.buyCoin.coin === sellCoin &&
-                    offer.sellCoin.coin === buyCoin &&
-                    offer.sellCoin.amount >= buyAmount
+                    offer.buyCoin.coin === buyCoin &&
+                    offer.sellCoin.coin === sellCoin &&
+                    offer.buyCoin.amount >= buyAmount
             )
             .map((offer: Offer) => {
                 return {
                     ...offer,
                     sellCoin: {
-                        ...offer.buyCoin,
+                        ...offer.sellCoin,
                         amount:
-                            (offer.buyCoin.amount / offer.sellCoin.amount) *
-                            buyAmount,
+                            (buyAmount * offer.sellCoin.amount) /
+                            offer.buyCoin.amount,
                     },
                     buyCoin: {
-                        ...offer.sellCoin,
+                        ...offer.buyCoin,
                         amount: buyAmount,
                     },
                 };

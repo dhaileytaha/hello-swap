@@ -18,14 +18,8 @@ describe("OrderBook tests", () => {
 
         orderBook.addOffer(offer);
 
-        const foundOffers = orderBook.findOffers({
-            buyCoin: CoinType.Ether,
-            sellCoin: CoinType.Bitcoin,
-            buyAmount: 5,
-        });
+        const foundOffer = orderBook.findOffer();
 
-        expect(foundOffers).toHaveLength(1);
-        const foundOffer = foundOffers[0]!;
         expect(foundOffer).toEqual({
             buyCoin: {
                 coin: offer.sellCoin.coin,

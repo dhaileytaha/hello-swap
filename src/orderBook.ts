@@ -39,7 +39,19 @@ export class OrderBook {
             },
         };
 
-        this.offers.push(offerToPublish);
+        const offerBase64 = Buffer.from(
+            JSON.stringify(offerToPublish)
+        ).toString("base64");
+        console.log(
+            "#comitdex buy",
+            offer.buyCoin.amount,
+            offer.buyCoin.coin,
+            "for",
+            offer.sellCoin.amount,
+            offer.sellCoin.coin,
+            offerBase64
+        );
+        process.exit();
     }
 
     /**

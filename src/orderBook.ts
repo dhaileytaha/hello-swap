@@ -1,3 +1,5 @@
+import { question } from "readline-sync";
+
 export interface Offer {
     sellCoin: Coin;
     buyCoin: Coin;
@@ -51,7 +53,6 @@ export class OrderBook {
             offer.sellCoin.coin,
             offerBase64
         );
-        process.exit();
     }
 
     /**
@@ -68,6 +69,17 @@ export class OrderBook {
         sellCoin,
         buyAmount,
     }: FindOfferQuery): Offer[] {
+        // yarn add readline-sync
+        // yarn add -D @types/readline-sync
+
+        const encodedOffer = question("Is there an offer you want to take?");
+
+        const offer = Buffer.from(encodedOffer, "base64").toString();
+
+        console.log("Will take this offer", offer);
+
+        process.exit();
+
         return this.offers
             .filter(
                 offer =>

@@ -334,7 +334,7 @@ export class HelloSwap {
         const classes: string[] = field.class;
 
         if (classes.includes("bitcoin") && classes.includes("address")) {
-            return Promise.resolve(this.bitcoinWallet.getAddress());
+            return this.bitcoinWallet.getAddress();
         }
 
         if (classes.includes("bitcoin") && classes.includes("feePerWU")) {

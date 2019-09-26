@@ -1,5 +1,6 @@
 import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther } from "ethers/utils";
+import fs from "fs";
 import { CoinType, HelloSwap } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
@@ -59,6 +60,13 @@ import { OrderBook } from "./orderBook";
 })();
 
 async function startApp(whoAmI: string, index: number) {
+    if (!fs.existsSync("./.env")) {
+        console.log(
+            "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
+        );
+        process.exit(1);
+    }
+
     const bitcoinWallet = await BitcoinWallet.newInstance(
         "regtest",
         process.env.BITCOIN_P2P_URI!,

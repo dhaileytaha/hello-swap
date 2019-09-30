@@ -20,6 +20,6 @@ Make sure that you have Docker installed before proceeding.
 
 Make sure that you have yarn (or npm) installed before proceeding.
 
-1. In a separate terminal, run `yarn install` (or `npm install`) to install dependencies.
-2. Start the swap: `yarn start` (or `npm start`).
-3. Hit `CTRL-C` once the swap is done.
+0. In a separate terminal, run `yarn install` (or `npm install`) to install dependencies.
+1. Start the swap: `yarn start` (or `npm start`).
+2. Hit `CTRL-C` once the swap is done.

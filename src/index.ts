@@ -1,14 +1,42 @@
 import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther } from "ethers/utils";
 import fs from "fs";
-import { CoinType, HelloSwap } from "./helloSwap";
+import winston from "winston";
+import { CoinType, CustomLogger, HelloSwap, WhoAmI } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
+    const logger = winston.createLogger({
+        levels: {
+            error: 0,
+            maker: 1,
+            taker: 1,
+            info: 1,
+            data: 2,
+            verbose: 3,
+        },
+        format: winston.format.combine(
+            winston.format.colorize({
+                all: true,
+                colors: {
+                    error: "red",
+                    maker: "cyan",
+                    taker: "yellow",
+                    info: "purple",
+                    data: "grey",
+                    verbose: "green",
+                },
+            }),
+            winston.format.simple()
+        ),
+        transports: [new winston.transports.Console()],
+        level: "info",
+    }) as CustomLogger;
+
     const orderBook = new OrderBook();
 
-    const maker = await startApp("maker", 0);
-    const taker = await startApp("taker", 1);
+    const maker = await startApp("maker", 0, logger);
+    const taker = await startApp("taker", 1, logger);
 
     // Maker creates and publishes offer
     const makerOffer = await maker.app.createOffer(
@@ -29,26 +57,27 @@ import { OrderBook } from "./orderBook";
         sellCoin: CoinType.Bitcoin,
         buyAmount: 5,
     });
-    console.log(`[taker] ${foundOffers.length} offer(s) found.`);
+    logger.taker(`${foundOffers.length} offer(s) found.`);
     await taker.app.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly
 
     async function exitHandler(exitCode: NodeJS.Signals) {
-        console.log(`Received ${exitCode}, closing...`);
+        logger.verbose(`Received ${exitCode}, closing...`);
         maker.app.stop();
         taker.app.stop();
         const promises = [maker, taker].map(async (persona: any) => {
-            const whoAmI = persona.app.whoAmI;
-            console.log(
-                `[${whoAmI}] Bitcoin balance:`,
-                await persona.bitcoinWallet.getBalance()
+            const whoAmI = persona.app.whoAmI as WhoAmI;
+            logger[whoAmI](
+                `Bitcoin balance: ${await persona.bitcoinWallet.getBalance()}`
             );
-            console.log(
-                `[${whoAmI}] Ether balance:`,
-                JSON.stringify(
-                    formatEther(await persona.ethereumWallet.getBalance())
-                )
+            logger[whoAmI](
+                `Ether balance: ${JSON.stringify(
+                    parseInt(
+                        formatEther(await persona.ethereumWallet.getBalance()),
+                        10
+                    )
+                )}`
             );
         });
         await Promise.all(promises);
@@ -60,9 +89,9 @@ import { OrderBook } from "./orderBook";
     process.on("SIGUSR2", exitHandler);
 })();
 
-async function startApp(whoAmI: string, index: number) {
+async function startApp(whoAmI: WhoAmI, index: number, logger: CustomLogger) {
     if (!fs.existsSync("./.env")) {
-        console.log(
+        logger.error(
             "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
         );
         process.exit(1);
@@ -83,19 +112,19 @@ async function startApp(whoAmI: string, index: number) {
     const app = new HelloSwap(
         process.env[`HTTP_URL_CND_${index}`]!,
         whoAmI,
+        logger,
         bitcoinWallet,
         ethereumWallet,
         () => true
     );
-    console.log(`[${whoAmI}] Started:`, await app.cndPeerId());
+    logger[whoAmI](`Started: ${await app.cndPeerId()}`);
 
-    console.log(
-        `[${whoAmI}] Bitcoin balance:`,
-        await bitcoinWallet.getBalance()
-    );
-    console.log(
-        `[${whoAmI}] Ether balance:`,
-        JSON.stringify(formatEther(await ethereumWallet.getBalance()))
+    logger[whoAmI](`Bitcoin balance: ${await bitcoinWallet.getBalance()}`);
+    logger[whoAmI](
+        `Ether balance: ${parseInt(
+            formatEther(await ethereumWallet.getBalance()),
+            10
+        )}`
     );
     return { app, bitcoinWallet, ethereumWallet };
 }

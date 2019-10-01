@@ -1,5 +1,4 @@
 import changeCase from "change-case";
-import colors from "colors";
 import {
     Action,
     Asset,
@@ -15,6 +14,7 @@ import {
 import { parseEther } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
+import winston from "winston";
 import { Coin, CoinType, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
@@ -24,6 +24,17 @@ export interface SimpleSwap {
     counterparty: string;
     buyAsset: Asset;
     sellAsset: Asset;
+}
+
+export type WhoAmI = "maker" | "taker";
+
+export interface CustomLogger extends winston.Logger {
+    error: winston.LeveledLogMethod;
+    maker: winston.LeveledLogMethod;
+    taker: winston.LeveledLogMethod;
+    info: winston.LeveledLogMethod;
+    data: winston.LeveledLogMethod;
+    verbose: winston.LeveledLogMethod;
 }
 
 /**
@@ -65,13 +76,15 @@ export class HelloSwap {
      * new HelloSwap()
      * @param cndUrl The url to cnd REST API
      * @param whoAmI A name for logging purposes only
+     * @param logger
      * @param bitcoinWallet
      * @param ethereumWallet
      * @param acceptPredicate If it returns true the swap is accepted, otherwise it is declined.
      */
     public constructor(
         cndUrl: string,
-        private readonly whoAmI: string,
+        private readonly whoAmI: WhoAmI,
+        private readonly logger: CustomLogger,
         private readonly bitcoinWallet: BitcoinWallet,
         private readonly ethereumWallet: EthereumWallet,
         private readonly acceptPredicate: (swap: SimpleSwap) => boolean
@@ -97,8 +110,8 @@ export class HelloSwap {
             this.getNewSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
                     if (swaps.length) {
-                        console.log(
-                            `[${whoAmI}] ${swaps.length} new swap(s) waiting for a decision`
+                        logger[whoAmI](
+                            `${swaps.length} new swap(s) waiting for a decision`
                         );
                     }
                     swaps.forEach(
@@ -106,15 +119,13 @@ export class HelloSwap {
                             const simpleSwap = HelloSwap.toSwap(swap);
                             if (this.acceptPredicate(simpleSwap)) {
                                 await this.acceptSwap(simpleSwap);
-                                console.log(
-                                    `[${whoAmI}] swap accepted:`,
-                                    simpleSwap.id
+                                logger[whoAmI](
+                                    `swap accepted: ${simpleSwap.id}`
                                 );
                             } else {
                                 await this.declineSwap(simpleSwap);
-                                console.log(
-                                    `[${whoAmI}] swap declined:`,
-                                    simpleSwap.id
+                                logger[whoAmI](
+                                    `swap declined: ${simpleSwap.id}`
                                 );
                             }
                         }
@@ -136,8 +147,8 @@ export class HelloSwap {
                         const props = swap.properties!;
                         const id = props.id;
                         if (this.swapsDone.indexOf(props.id) === -1) {
-                            console.log(
-                                `[${this.whoAmI}] Swap finished with status ${props.status}: ${id}`
+                            logger[whoAmI](
+                                `Swap finished with status ${props.status}: ${id}`
                             );
 
                             this.swapsDone.push(id);
@@ -164,8 +175,8 @@ export class HelloSwap {
             );
         }
 
-        console.log(
-            `[${this.whoAmI}] Creating offer to sell ${JSON.stringify(
+        this.logger[this.whoAmI](
+            `Creating offer to sell ${JSON.stringify(
                 sellCoin
             )} for ${JSON.stringify(buyCoin)}`
         );
@@ -188,8 +199,8 @@ export class HelloSwap {
         makerPeerId,
         makerPeerAddress,
     }: Offer) {
-        console.log(
-            `[${this.whoAmI}] Taking offer to buy ${JSON.stringify(
+        this.logger[this.whoAmI](
+            `Taking offer to buy ${JSON.stringify(
                 buyCoin
             )} for ${JSON.stringify(sellCoin)}`
         );
@@ -309,19 +320,17 @@ export class HelloSwap {
             const stringAction = JSON.stringify(ledgerAction);
             if (this.actionsDone.indexOf(stringAction) === -1) {
                 this.actionsDone.push(stringAction);
-                console.log(
-                    `[${this.whoAmI}] ${changeCase.titleCase(action.name)}ing ${
+                this.logger[this.whoAmI](
+                    `${changeCase.titleCase(action.name)}ing ${
                         action.name === "fund"
                             ? swap.sellAsset.name
                             : swap.buyAsset.name
-                    } for`,
-                    JSON.stringify(swap.id)
+                    } for ${JSON.stringify(swap.id)}`
                 );
                 const res = await this.doLedgerAction(ledgerAction);
                 if (!res) {
-                    console.log(
-                        colors.grey("[trace] Ledger action failed:"),
-                        colors.grey(JSON.stringify(res))
+                    this.logger.data(
+                        `Ledger action failed: ${JSON.stringify(res)}`
                     );
                 }
             }
@@ -357,11 +366,10 @@ export class HelloSwap {
                     network
                 );
 
-                console.log(
-                    colors.grey(
-                        "[trace] Bitcoin Broadcast Signed Transaction response:"
-                    ),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    `Bitcoin Broadcast Signed Transaction response: ${JSON.stringify(
+                        response
+                    )}`
                 );
 
                 return response;
@@ -376,9 +384,10 @@ export class HelloSwap {
                     network
                 );
 
-                console.log(
-                    colors.grey("[trace] Bitcoin Send To Address response:"),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    `Bitcoin Send To Address response: ${JSON.stringify(
+                        response
+                    )}`
                 );
 
                 return response;
@@ -392,9 +401,10 @@ export class HelloSwap {
                     gas_limit
                 );
 
-                console.log(
-                    colors.grey("[trace] Ethereum Call Contract response:"),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    `Ethereum Call Contract response: ${JSON.stringify(
+                        response
+                    )}`
                 );
 
                 return response;
@@ -409,9 +419,10 @@ export class HelloSwap {
                     gas_limit
                 );
 
-                console.log(
-                    colors.grey("[trace] Ethereum Deploy Contract response:"),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    `Ethereum Deploy Contract response: ${JSON.stringify(
+                        response
+                    )}`
                 );
 
                 return response;

@@ -6,6 +6,18 @@ import { CoinType, CustomLogger, HelloSwap, WhoAmI } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
+    const colorizer = winston.format.colorize({
+        all: true,
+        colors: {
+            error: "red",
+            maker: "cyan",
+            taker: "yellow",
+            info: "purple",
+            data: "grey",
+            verbose: "green",
+        },
+    });
+
     const logger = winston.createLogger({
         levels: {
             error: 0,
@@ -16,18 +28,10 @@ import { OrderBook } from "./orderBook";
             verbose: 3,
         },
         format: winston.format.combine(
-            winston.format.colorize({
-                all: true,
-                colors: {
-                    error: "red",
-                    maker: "cyan",
-                    taker: "yellow",
-                    info: "purple",
-                    data: "grey",
-                    verbose: "green",
-                },
-            }),
-            winston.format.simple()
+            winston.format.simple(),
+            winston.format.printf(msg =>
+                colorizer.colorize(msg.level, `[${msg.level}] ${msg.message}`)
+            )
         ),
         transports: [new winston.transports.Console()],
         level: "info",

@@ -39,7 +39,7 @@ import { OrderBook } from "./orderBook";
     const taker = await startApp("taker", 1, logger);
 
     // Maker creates and publishes offer
-    const makerOffer = await maker.app.createOffer(
+    const makerOffer = await maker.createOffer(
         {
             coin: CoinType.Ether,
             amount: 10,
@@ -58,29 +58,27 @@ import { OrderBook } from "./orderBook";
         buyAmount: 5,
     });
     logger.taker(`${foundOffers.length} offer(s) found.`);
-    await taker.app.takeOffer(foundOffers[0]);
+    await taker.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly
 
     async function exitHandler(exitCode: NodeJS.Signals) {
         logger.verbose(`Received ${exitCode}, closing...`);
-        maker.app.stop();
-        taker.app.stop();
-        const promises = [maker, taker].map(async (persona: any) => {
-            const whoAmI = persona.app.whoAmI as WhoAmI;
-            logger[whoAmI](
-                `Bitcoin balance: ${await persona.bitcoinWallet.getBalance()}`
+        maker.stop();
+        taker.stop();
+
+        const logBalances = async (app: HelloSwap) => {
+            logger[app.whoAmI](
+                `Bitcoin balance: ${await app.getBitcoinBalance()}`
             );
-            logger[whoAmI](
+            logger[app.whoAmI](
                 `Ether balance: ${JSON.stringify(
-                    parseInt(
-                        formatEther(await persona.ethereumWallet.getBalance()),
-                        10
-                    )
+                    parseInt(formatEther(await app.getEtherBalance()), 10)
                 )}`
             );
-        });
-        await Promise.all(promises);
+        };
+
+        await logBalances(maker).then(() => logBalances(taker));
         process.exit();
     }
 
@@ -89,7 +87,11 @@ import { OrderBook } from "./orderBook";
     process.on("SIGUSR2", exitHandler);
 })();
 
-async function startApp(whoAmI: WhoAmI, index: number, logger: CustomLogger) {
+async function startApp(
+    whoAmI: WhoAmI,
+    index: number,
+    logger: CustomLogger
+): Promise<HelloSwap> {
     if (!fs.existsSync("./.env")) {
         logger.error(
             "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
@@ -119,12 +121,13 @@ async function startApp(whoAmI: WhoAmI, index: number, logger: CustomLogger) {
     );
     logger[whoAmI](`Started: ${await app.cndPeerId()}`);
 
-    logger[whoAmI](`Bitcoin balance: ${await bitcoinWallet.getBalance()}`);
+    logger[whoAmI](`Bitcoin balance: ${await app.getBitcoinBalance()}`);
     logger[whoAmI](
         `Ether balance: ${parseInt(
-            formatEther(await ethereumWallet.getBalance()),
+            formatEther(await app.getEtherBalance()),
             10
         )}`
     );
-    return { app, bitcoinWallet, ethereumWallet };
+
+    return app;
 }

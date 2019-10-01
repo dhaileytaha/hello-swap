@@ -83,7 +83,7 @@ export class HelloSwap {
      */
     public constructor(
         cndUrl: string,
-        private readonly whoAmI: WhoAmI,
+        public readonly whoAmI: WhoAmI,
         private readonly logger: CustomLogger,
         private readonly bitcoinWallet: BitcoinWallet,
         private readonly ethereumWallet: EthereumWallet,
@@ -232,6 +232,14 @@ export class HelloSwap {
         };
 
         return this.cnd.postSwap(swap);
+    }
+
+    public getBitcoinBalance() {
+        return this.bitcoinWallet.getBalance();
+    }
+
+    public getEtherBalance() {
+        return this.ethereumWallet.getBalance();
     }
 
     /**

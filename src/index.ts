@@ -96,10 +96,7 @@ async function logBalances(app: HelloSwap, logger: CustomLogger) {
     logger[app.whoAmI](
         `Bitcoin balance: ${parseFloat(await app.getBitcoinBalance()).toFixed(
             2
-        )}`
-    );
-    logger[app.whoAmI](
-        `Ether balance: ${parseFloat(
+        )}. Ether balance: ${parseFloat(
             formatEther(await app.getEtherBalance())
         ).toFixed(2)}`
     );

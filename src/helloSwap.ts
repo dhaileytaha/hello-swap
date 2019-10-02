@@ -1,4 +1,3 @@
-import changeCase from "change-case";
 import {
     Action,
     Asset,
@@ -318,8 +317,6 @@ export class HelloSwap {
     private async performNextLedgerAction(
         entity: EmbeddedRepresentationSubEntity
     ) {
-        const swap = HelloSwap.toSwap(entity);
-
         const action = entity.actions!.find((action: Action) => {
             return action.name === "fund" || action.name === "redeem";
         })!;
@@ -336,11 +333,9 @@ export class HelloSwap {
             if (this.actionsDone.indexOf(stringAction) === -1) {
                 this.actionsDone.push(stringAction);
                 this.logger[this.whoAmI](
-                    `${changeCase.titleCase(action.name)}ing ${
-                        action.name === "fund"
-                            ? swap.sellAsset.name
-                            : swap.buyAsset.name
-                    } for ${JSON.stringify(swap.id)}`
+                    `Performing ${action.name} action for swap ${
+                        HelloSwap.toSwap(entity).id
+                    }`
                 );
                 const res = await this.doLedgerAction(ledgerAction);
                 if (!res) {

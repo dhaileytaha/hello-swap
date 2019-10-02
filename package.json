@@ -29,7 +29,6 @@
         "typescript": "^3.6.2"
     },
     "dependencies": {
-        "change-case": "^3.1.0",
         "comit-sdk": "^0.3.1",
         "delay": "^4.3.0",
         "dotenv": "^8.1.0",

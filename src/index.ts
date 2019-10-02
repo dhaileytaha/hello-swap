@@ -7,6 +7,7 @@ import { OrderBook } from "./orderBook";
 
 (async function main() {
     const logger = createLogger();
+    checkForEnvFile(logger);
 
     const orderBook = new OrderBook();
 
@@ -56,13 +57,6 @@ async function startApp(
     index: number,
     logger: CustomLogger
 ): Promise<HelloSwap> {
-    if (!fs.existsSync("./.env")) {
-        logger.error(
-            "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
-        );
-        process.exit(1);
-    }
-
     const bitcoinWallet = await BitcoinWallet.newInstance(
         "regtest",
         process.env.BITCOIN_P2P_URI!,
@@ -89,6 +83,15 @@ async function startApp(
     logBalances(app, logger);
 
     return app;
+}
+
+function checkForEnvFile(logger: CustomLogger) {
+    if (!fs.existsSync("./.env")) {
+        logger.error(
+            "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
+        );
+        process.exit(1);
+    }
 }
 
 const colorizer = winston.format.colorize({

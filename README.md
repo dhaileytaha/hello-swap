@@ -10,11 +10,11 @@ Hello-Swap uses the [comit-js-sdk](https://github.com/comit-network/comit-js-sdk
 
 Make sure that you have Docker installed before proceeding.
 
-0. Get the latest version of [create-comit-app](https://github.com/comit-network/create-comit-app) by
+1. Get the latest version of [create-comit-app](https://github.com/comit-network/create-comit-app) by
     - downloading and unzipping the [latest release of create-comit-app](https://github.com/comit-network/create-comit-app/releases); or
     - cloning the repository and checking out the latest tagged release.
-1. Run `create-comit-app start-env` inside the root directory of this project.
-2. Wait until the environment is ready.
+2. Run `create-comit-app start-env` inside the root directory of this project.
+3. Wait until the environment is ready.
 
 ### Do an atomic swap
 

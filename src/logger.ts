@@ -35,10 +35,9 @@ export function createLogger() {
         level !== "data" &&
         level !== "verbose"
     ) {
-        console.log(
+        throw new Error(
             `[error] Invalid log level: ${level}. Choose one from "error", "info", "data" or "verbose"`
         );
-        process.exit(1);
     }
 
     return winston.createLogger({

@@ -160,11 +160,12 @@ export class HelloSwap {
             sellCoin.coin !== CoinType.Ether ||
             buyCoin.coin !== CoinType.Bitcoin
         ) {
-            throw new Error(
+            this.logger.error(
                 `Offer not supported: sell ${JSON.stringify(
                     sellCoin.coin
                 )}, buy ${JSON.stringify(buyCoin.coin)}`
             );
+            process.exit(1);
         }
 
         this.logger[this.whoAmI](

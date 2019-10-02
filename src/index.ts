@@ -4,11 +4,8 @@ import fs from "fs";
 import { CoinType, HelloSwap } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
-const ENV_PATH = process.env.HOME + "/.create-comit-app/env";
-console.log(process.env);
-
 (async function main() {
-    checkEnvFile(ENV_PATH);
+    checkEnvFile(process.env.DOTENV_CONFIG_PATH!);
 
     const orderBook = new OrderBook();
 

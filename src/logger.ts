@@ -51,9 +51,14 @@ export function createLogger() {
         },
         format: winston.format.combine(
             winston.format.simple(),
-            winston.format.printf(msg =>
-                colorizer.colorize(msg.level, `[${msg.level}] ${msg.message}`)
-            )
+            winston.format.printf(msg => {
+                const message =
+                    msg.level === "data"
+                        ? `  \u21B3[${msg.level}] ${msg.message}`
+                        : `[${msg.level}] ${msg.message}`;
+
+                return colorizer.colorize(msg.level, message);
+            })
         ),
         transports: [new winston.transports.Console()],
         level,

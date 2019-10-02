@@ -55,7 +55,7 @@ import { OrderBook } from "./orderBook";
     );
     orderBook.addOffer(makerOffer);
 
-    // Taker finds offer
+    // Taker finds and takes offer
     const foundOffers = orderBook.findOffers({
         buyCoin: CoinType.Ether,
         sellCoin: CoinType.Bitcoin,

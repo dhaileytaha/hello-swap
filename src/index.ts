@@ -6,36 +6,7 @@ import { CoinType, CustomLogger, HelloSwap, WhoAmI } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
-    const colorizer = winston.format.colorize({
-        all: true,
-        colors: {
-            error: "red",
-            maker: "cyan",
-            taker: "yellow",
-            info: "purple",
-            data: "grey",
-            verbose: "green",
-        },
-    });
-
-    const logger = winston.createLogger({
-        levels: {
-            error: 0,
-            maker: 1,
-            taker: 1,
-            info: 1,
-            data: 2,
-            verbose: 3,
-        },
-        format: winston.format.combine(
-            winston.format.simple(),
-            winston.format.printf(msg =>
-                colorizer.colorize(msg.level, `[${msg.level}] ${msg.message}`)
-            )
-        ),
-        transports: [new winston.transports.Console()],
-        level: "info",
-    }) as CustomLogger;
+    const logger = createLogger();
 
     const orderBook = new OrderBook();
 
@@ -112,11 +83,45 @@ async function startApp(
         ethereumWallet,
         () => true
     );
-    logger[whoAmI](`Started: ${await app.cndPeerId()}`);
 
+    logger[whoAmI]("Started hello-swap");
+    logger.data(`with ID: ${await app.cndPeerId()}`);
     logBalances(app, logger);
 
     return app;
+}
+
+const colorizer = winston.format.colorize({
+    all: true,
+    colors: {
+        error: "red",
+        maker: "cyan",
+        taker: "yellow",
+        info: "purple",
+        data: "grey",
+        verbose: "green",
+    },
+});
+
+function createLogger() {
+    return winston.createLogger({
+        levels: {
+            error: 0,
+            maker: 1,
+            taker: 1,
+            info: 1,
+            data: 2,
+            verbose: 3,
+        },
+        format: winston.format.combine(
+            winston.format.simple(),
+            winston.format.printf(msg =>
+                colorizer.colorize(msg.level, `[${msg.level}] ${msg.message}`)
+            )
+        ),
+        transports: [new winston.transports.Console()],
+        level: "info",
+    }) as CustomLogger;
 }
 
 async function logBalances(app: HelloSwap, logger: CustomLogger) {

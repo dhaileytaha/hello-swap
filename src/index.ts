@@ -34,7 +34,7 @@ import { OrderBook } from "./orderBook";
         sellCoin: CoinType.Bitcoin,
         buyAmount: 5,
     });
-    logger.taker(`${foundOffers.length} offer(s) found.`);
+    logger.taker(`${foundOffers.length} offer(s) found`);
     await taker.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly

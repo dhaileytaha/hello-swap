@@ -1,8 +1,8 @@
 import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther } from "ethers/utils";
 import fs from "fs";
-import winston from "winston";
-import { CoinType, CustomLogger, HelloSwap, WhoAmI } from "./helloSwap";
+import { CoinType, HelloSwap, WhoAmI } from "./helloSwap";
+import { createLogger, CustomLogger } from "./logger";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
@@ -92,39 +92,6 @@ function checkForEnvFile(logger: CustomLogger) {
         );
         process.exit(1);
     }
-}
-
-const colorizer = winston.format.colorize({
-    all: true,
-    colors: {
-        error: "red",
-        maker: "cyan",
-        taker: "yellow",
-        info: "purple",
-        data: "grey",
-        verbose: "green",
-    },
-});
-
-function createLogger() {
-    return winston.createLogger({
-        levels: {
-            error: 0,
-            maker: 1,
-            taker: 1,
-            info: 1,
-            data: 2,
-            verbose: 3,
-        },
-        format: winston.format.combine(
-            winston.format.simple(),
-            winston.format.printf(msg =>
-                colorizer.colorize(msg.level, `[${msg.level}] ${msg.message}`)
-            )
-        ),
-        transports: [new winston.transports.Console()],
-        level: "info",
-    }) as CustomLogger;
 }
 
 async function logBalances(app: HelloSwap, logger: CustomLogger) {

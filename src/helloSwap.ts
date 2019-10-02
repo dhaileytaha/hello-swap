@@ -14,7 +14,7 @@ import {
 import { parseEther } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
-import winston from "winston";
+import { CustomLogger } from "./logger";
 import { Coin, CoinType, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
@@ -27,15 +27,6 @@ export interface SimpleSwap {
 }
 
 export type WhoAmI = "maker" | "taker";
-
-export interface CustomLogger extends winston.Logger {
-    error: winston.LeveledLogMethod;
-    maker: winston.LeveledLogMethod;
-    taker: winston.LeveledLogMethod;
-    info: winston.LeveledLogMethod;
-    data: winston.LeveledLogMethod;
-    verbose: winston.LeveledLogMethod;
-}
 
 /**
  * The main class of our app. Connects to a cnd, automatically actions available swaps.

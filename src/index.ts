@@ -71,18 +71,7 @@ import { OrderBook } from "./orderBook";
         maker.stop();
         taker.stop();
 
-        const logBalances = async (app: HelloSwap) => {
-            logger[app.whoAmI](
-                `Bitcoin balance: ${await app.getBitcoinBalance()}`
-            );
-            logger[app.whoAmI](
-                `Ether balance: ${JSON.stringify(
-                    parseInt(formatEther(await app.getEtherBalance()), 10)
-                )}`
-            );
-        };
-
-        await logBalances(maker).then(() => logBalances(taker));
+        await logBalances(maker, logger).then(() => logBalances(taker, logger));
         process.exit();
     }
 
@@ -125,13 +114,20 @@ async function startApp(
     );
     logger[whoAmI](`Started: ${await app.cndPeerId()}`);
 
-    logger[whoAmI](`Bitcoin balance: ${await app.getBitcoinBalance()}`);
-    logger[whoAmI](
-        `Ether balance: ${parseInt(
-            formatEther(await app.getEtherBalance()),
-            10
-        )}`
-    );
+    logBalances(app, logger);
 
     return app;
+}
+
+async function logBalances(app: HelloSwap, logger: CustomLogger) {
+    logger[app.whoAmI](
+        `Bitcoin balance: ${parseFloat(await app.getBitcoinBalance()).toFixed(
+            2
+        )}`
+    );
+    logger[app.whoAmI](
+        `Ether balance: ${parseFloat(
+            formatEther(await app.getEtherBalance())
+        ).toFixed(2)}`
+    );
 }

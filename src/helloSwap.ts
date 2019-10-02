@@ -115,10 +115,10 @@ export class HelloSwap {
                                     `Started swap with ID: ${simpleSwap.id}`
                                 );
                                 this.logger.data(
-                                    `with parameters: buy ${JSON.stringify(
-                                        simpleSwap.buyAsset
-                                    )}, sell ${JSON.stringify(
+                                    `with parameters: sell ${JSON.stringify(
                                         simpleSwap.sellAsset
+                                    )}, buy ${JSON.stringify(
+                                        simpleSwap.buyAsset
                                     )}`
                                 );
                             } else {
@@ -127,10 +127,10 @@ export class HelloSwap {
                                     `Cancelled swap with ID: ${simpleSwap.id}`
                                 );
                                 this.logger.data(
-                                    `with parameters: buy ${JSON.stringify(
-                                        simpleSwap.buyAsset
-                                    )}, sell ${JSON.stringify(
+                                    `with parameters: sell ${JSON.stringify(
                                         simpleSwap.sellAsset
+                                    )}, buy ${JSON.stringify(
+                                        simpleSwap.buyAsset
                                     )}`
                                 );
                             }
@@ -207,9 +207,9 @@ export class HelloSwap {
         makerPeerAddress,
     }: Offer) {
         this.logger[this.whoAmI](
-            `Taking offer: buy ${JSON.stringify(
-                buyCoin
-            )}, sell ${JSON.stringify(sellCoin)}`
+            `Taking offer: sell ${JSON.stringify(
+                sellCoin
+            )}, buy ${JSON.stringify(buyCoin)}`
         );
 
         const swap = {

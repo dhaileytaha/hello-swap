@@ -6,13 +6,14 @@ import { createLogger, CustomLogger } from "./logger";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
+    checkForEnvFile();
+
     const logger = createLogger();
-    checkForEnvFile(logger);
 
     const orderBook = new OrderBook();
 
-    const maker = await startApp("maker", 0, logger);
-    const taker = await startApp("taker", 1, logger);
+    const maker = await startApp("maker", 0);
+    const taker = await startApp("taker", 1);
 
     // Maker creates and publishes offer
     const makerOffer = await maker.createOffer(
@@ -52,11 +53,8 @@ import { OrderBook } from "./orderBook";
     process.on("SIGUSR2", exitHandler);
 })();
 
-async function startApp(
-    whoAmI: WhoAmI,
-    index: number,
-    logger: CustomLogger
-): Promise<HelloSwap> {
+async function startApp(whoAmI: WhoAmI, index: number): Promise<HelloSwap> {
+    const logger = createLogger();
     const bitcoinWallet = await BitcoinWallet.newInstance(
         "regtest",
         process.env.BITCOIN_P2P_URI!,
@@ -72,7 +70,6 @@ async function startApp(
     const app = new HelloSwap(
         process.env[`HTTP_URL_CND_${index}`]!,
         whoAmI,
-        logger,
         bitcoinWallet,
         ethereumWallet,
         () => true
@@ -85,8 +82,9 @@ async function startApp(
     return app;
 }
 
-function checkForEnvFile(logger: CustomLogger) {
+function checkForEnvFile() {
     if (!fs.existsSync("./.env")) {
+        const logger = createLogger();
         logger.error(
             "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
         );

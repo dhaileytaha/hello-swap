@@ -14,7 +14,7 @@ import {
 import { parseEther } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
-import { CustomLogger } from "./logger";
+import { createLogger, CustomLogger } from "./logger";
 import { Coin, CoinType, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
@@ -62,6 +62,7 @@ export class HelloSwap {
     private readonly interval: NodeJS.Timeout;
     private offersMade: Offer[];
     private swapsDone: string[];
+    private logger: CustomLogger;
 
     /**
      * new HelloSwap()
@@ -75,7 +76,6 @@ export class HelloSwap {
     public constructor(
         cndUrl: string,
         public readonly whoAmI: WhoAmI,
-        private readonly logger: CustomLogger,
         private readonly bitcoinWallet: BitcoinWallet,
         private readonly ethereumWallet: EthereumWallet,
         private readonly acceptPredicate: (swap: SimpleSwap) => boolean
@@ -84,6 +84,7 @@ export class HelloSwap {
         this.actionsDone = [];
         this.offersMade = [];
         this.swapsDone = [];
+        this.logger = createLogger();
 
         // Store swapped already finished in case of a re-run with same cnd.
         this.getDoneSwaps().then((swaps: EmbeddedRepresentationSubEntity[]) => {
@@ -101,7 +102,7 @@ export class HelloSwap {
             this.getNewSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
                     if (swaps.length) {
-                        logger[whoAmI](
+                        this.logger[whoAmI](
                             `${swaps.length} new swap(s) waiting for a decision`
                         );
                     }
@@ -110,12 +111,12 @@ export class HelloSwap {
                             const simpleSwap = HelloSwap.toSwap(swap);
                             if (this.acceptPredicate(simpleSwap)) {
                                 await this.acceptSwap(simpleSwap);
-                                logger[whoAmI](
+                                this.logger[whoAmI](
                                     `swap accepted: ${simpleSwap.id}`
                                 );
                             } else {
                                 await this.declineSwap(simpleSwap);
-                                logger[whoAmI](
+                                this.logger[whoAmI](
                                     `swap declined: ${simpleSwap.id}`
                                 );
                             }
@@ -138,7 +139,7 @@ export class HelloSwap {
                         const props = swap.properties!;
                         const id = props.id;
                         if (this.swapsDone.indexOf(props.id) === -1) {
-                            logger[whoAmI](
+                            this.logger[whoAmI](
                                 `Swap finished with status ${props.status}: ${id}`
                             );
 

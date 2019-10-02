@@ -1,3 +1,4 @@
+import minimist from "minimist";
 import winston from "winston";
 
 export interface CustomLogger extends winston.Logger {
@@ -22,6 +23,24 @@ const colorizer = winston.format.colorize({
 });
 
 export function createLogger() {
+    const level = minimist(process.argv.slice(2), {
+        default: {
+            loglevel: "info",
+        },
+    }).loglevel;
+
+    if (
+        level !== "error" &&
+        level !== "info" &&
+        level !== "data" &&
+        level !== "verbose"
+    ) {
+        console.log(
+            `[error] Invalid log level: ${level}. Choose one from "error", "info", "data" or "verbose"`
+        );
+        process.exit(1);
+    }
+
     return winston.createLogger({
         levels: {
             error: 0,
@@ -38,6 +57,6 @@ export function createLogger() {
             )
         ),
         transports: [new winston.transports.Console()],
-        level: "info",
+        level,
     }) as CustomLogger;
 }

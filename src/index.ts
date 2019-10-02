@@ -4,7 +4,12 @@ import fs from "fs";
 import { CoinType, HelloSwap } from "./helloSwap";
 import { OrderBook } from "./orderBook";
 
+const ENV_PATH = process.env.HOME + "/.create-comit-app/env";
+console.log(process.env);
+
 (async function main() {
+    checkEnvFile(ENV_PATH);
+
     const orderBook = new OrderBook();
 
     const maker = await startApp("maker", 0);
@@ -61,13 +66,6 @@ import { OrderBook } from "./orderBook";
 })();
 
 async function startApp(whoAmI: string, index: number) {
-    if (!fs.existsSync("./.env")) {
-        console.log(
-            "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
-        );
-        process.exit(1);
-    }
-
     const bitcoinWallet = await BitcoinWallet.newInstance(
         "regtest",
         process.env.BITCOIN_P2P_URI!,
@@ -98,4 +96,13 @@ async function startApp(whoAmI: string, index: number) {
         JSON.stringify(formatEther(await ethereumWallet.getBalance()))
     );
     return { app, bitcoinWallet, ethereumWallet };
+}
+
+function checkEnvFile(path: string) {
+    if (!fs.existsSync(path)) {
+        console.log(
+            `Could not find ${path} file. Did you run \`create-comit-app start-env\`?`
+        );
+        process.exit(1);
+    }
 }

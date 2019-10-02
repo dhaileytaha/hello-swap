@@ -103,7 +103,7 @@ export class HelloSwap {
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
                     if (swaps.length) {
                         this.logger[whoAmI](
-                            `${swaps.length} new swap(s) waiting for a decision`
+                            `${swaps.length} new swap(s) waiting to be started`
                         );
                     }
                     swaps.forEach(
@@ -112,12 +112,26 @@ export class HelloSwap {
                             if (this.acceptPredicate(simpleSwap)) {
                                 await this.acceptSwap(simpleSwap);
                                 this.logger[whoAmI](
-                                    `swap accepted: ${simpleSwap.id}`
+                                    `Started swap with ID: ${simpleSwap.id}`
+                                );
+                                this.logger.data(
+                                    `with parameters: buy ${JSON.stringify(
+                                        simpleSwap.buyAsset
+                                    )}, sell ${JSON.stringify(
+                                        simpleSwap.sellAsset
+                                    )}`
                                 );
                             } else {
                                 await this.declineSwap(simpleSwap);
                                 this.logger[whoAmI](
-                                    `swap declined: ${simpleSwap.id}`
+                                    `Cancelled swap with ID: ${simpleSwap.id}`
+                                );
+                                this.logger.data(
+                                    `with parameters: buy ${JSON.stringify(
+                                        simpleSwap.buyAsset
+                                    )}, sell ${JSON.stringify(
+                                        simpleSwap.sellAsset
+                                    )}`
                                 );
                             }
                         }

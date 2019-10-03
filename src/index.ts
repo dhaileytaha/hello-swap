@@ -79,8 +79,7 @@ async function startApp(whoAmI: string, index: number) {
         process.env[`HTTP_URL_CND_${index}`]!,
         whoAmI,
         bitcoinWallet,
-        ethereumWallet,
-        () => true
+        ethereumWallet
     );
     console.log(`[${whoAmI}] Started:`, await app.cndPeerId());
 

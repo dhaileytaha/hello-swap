@@ -73,8 +73,7 @@ export class HelloSwap {
         cndUrl: string,
         private readonly whoAmI: string,
         private readonly bitcoinWallet: BitcoinWallet,
-        private readonly ethereumWallet: EthereumWallet,
-        private readonly acceptPredicate: (swap: SimpleSwap) => boolean
+        private readonly ethereumWallet: EthereumWallet
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
@@ -104,19 +103,11 @@ export class HelloSwap {
                     swaps.forEach(
                         async (swap: EmbeddedRepresentationSubEntity) => {
                             const simpleSwap = HelloSwap.toSwap(swap);
-                            if (this.acceptPredicate(simpleSwap)) {
-                                await this.acceptSwap(simpleSwap);
-                                console.log(
-                                    `[${whoAmI}] swap accepted:`,
-                                    simpleSwap.id
-                                );
-                            } else {
-                                await this.declineSwap(simpleSwap);
-                                console.log(
-                                    `[${whoAmI}] swap declined:`,
-                                    simpleSwap.id
-                                );
-                            }
+                            await this.acceptSwap(simpleSwap);
+                            console.log(
+                                `[${whoAmI}] swap accepted:`,
+                                simpleSwap.id
+                            );
                         }
                     );
                 }
@@ -238,16 +229,6 @@ export class HelloSwap {
         return this.cnd.executeAction(acceptAction!, (field: Field) =>
             this.fieldValueResolver(field)
         );
-    }
-
-    private async declineSwap(swap: SimpleSwap) {
-        const swapDetails = await this.cnd.getSwap(swap.id);
-        const actions = swapDetails.actions;
-        const declineAction = actions!.find(
-            action => action.name === "decline"
-        );
-
-        return this.cnd.executeAction(declineAction!);
     }
 
     private async getNewSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {

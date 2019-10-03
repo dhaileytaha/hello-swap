@@ -58,7 +58,6 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
-    private offersMade: Offer[];
     private swapsDone: string[];
 
     /**
@@ -77,7 +76,6 @@ export class HelloSwap {
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
-        this.offersMade = [];
         this.swapsDone = [];
 
         // Store swapped already finished in case of a re-run with same cnd.
@@ -167,8 +165,6 @@ export class HelloSwap {
             makerPeerId: await this.cnd.getPeerId(),
             makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
         };
-
-        this.offersMade.push(offer);
 
         return offer;
     }

@@ -100,37 +100,13 @@ export class HelloSwap {
         this.interval = setInterval(() => {
             this.getNewSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
-                    if (swaps.length) {
-                        this.logger[whoAmI](
-                            "%d new swap(s) waiting to be started",
-                            swaps.length
-                        );
-                    }
                     swaps.forEach(
                         async (swap: EmbeddedRepresentationSubEntity) => {
                             const simpleSwap = HelloSwap.toSwap(swap);
                             if (this.acceptPredicate(simpleSwap)) {
                                 await this.acceptSwap(simpleSwap);
-                                this.logger[whoAmI](
-                                    "Started swap with ID: %s",
-                                    simpleSwap.id
-                                );
-                                this.logger.data(
-                                    "with parameters: sell %j, buy %j",
-                                    simpleSwap.sellAsset,
-                                    simpleSwap.buyAsset
-                                );
                             } else {
                                 await this.declineSwap(simpleSwap);
-                                this.logger[whoAmI](
-                                    "Cancelled swap with ID",
-                                    simpleSwap.id
-                                );
-                                this.logger.data(
-                                    "with parameters: sell %j, buy %j",
-                                    simpleSwap.sellAsset,
-                                    simpleSwap.buyAsset
-                                );
                             }
                         }
                     );

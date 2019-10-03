@@ -2,13 +2,11 @@ import { BitcoinWallet, EthereumWallet } from "comit-sdk";
 import { formatEther } from "ethers/utils";
 import fs from "fs";
 import { CoinType, HelloSwap, WhoAmI } from "./helloSwap";
-import { createLogger, CustomLogger } from "./logger";
+import { createLogger } from "./logger";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
     checkForEnvFile();
-
-    const logger = createLogger();
 
     const orderBook = new OrderBook();
 
@@ -34,7 +32,6 @@ import { OrderBook } from "./orderBook";
         sellCoin: CoinType.Bitcoin,
         buyAmount: 5,
     });
-    logger.taker("%d offer(s) found", foundOffers.length);
     await taker.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly
@@ -43,7 +40,7 @@ import { OrderBook } from "./orderBook";
         maker.stop();
         taker.stop();
 
-        await logBalances(maker, logger).then(() => logBalances(taker, logger));
+        await logBalances(maker).then(() => logBalances(taker));
         process.exit();
     }
 
@@ -53,7 +50,6 @@ import { OrderBook } from "./orderBook";
 })();
 
 async function startApp(whoAmI: WhoAmI, index: number): Promise<HelloSwap> {
-    const logger = createLogger();
     const bitcoinWallet = await BitcoinWallet.newInstance(
         "regtest",
         process.env.BITCOIN_P2P_URI!,
@@ -74,9 +70,7 @@ async function startApp(whoAmI: WhoAmI, index: number): Promise<HelloSwap> {
         () => true
     );
 
-    logger[whoAmI]("Started hello-swap");
-    logger.data("with ID: %s", await app.cndPeerId());
-    logBalances(app, logger);
+    await logBalances(app);
 
     return app;
 }
@@ -91,7 +85,8 @@ function checkForEnvFile() {
     }
 }
 
-async function logBalances(app: HelloSwap, logger: CustomLogger) {
+async function logBalances(app: HelloSwap) {
+    const logger = createLogger();
     logger[app.whoAmI](
         "Bitcoin balance: %f. Ether balance: %f",
         parseFloat(await app.getBitcoinBalance()).toFixed(2),

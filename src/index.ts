@@ -6,7 +6,7 @@ import { createLogger } from "./logger";
 import { OrderBook } from "./orderBook";
 
 (async function main() {
-    checkForEnvFile();
+    checkEnvFile(process.env.DOTENV_CONFIG_PATH!);
 
     const orderBook = new OrderBook();
 
@@ -49,7 +49,7 @@ import { OrderBook } from "./orderBook";
     process.on("SIGUSR2", exitHandler);
 })();
 
-async function startApp(whoAmI: WhoAmI, index: number): Promise<HelloSwap> {
+async function startApp(whoAmI: WhoAmI, index: number) {
     const bitcoinWallet = await BitcoinWallet.newInstance(
         "regtest",
         process.env.BITCOIN_P2P_URI!,
@@ -75,16 +75,6 @@ async function startApp(whoAmI: WhoAmI, index: number): Promise<HelloSwap> {
     return app;
 }
 
-function checkForEnvFile() {
-    if (!fs.existsSync("./.env")) {
-        const logger = createLogger();
-        logger.error(
-            "Could not find `.env` file in project root. Did you run `create-comit-app start-env` in the project root?"
-        );
-        process.exit(1);
-    }
-}
-
 async function logBalances(app: HelloSwap) {
     const logger = createLogger();
     logger[app.whoAmI](
@@ -92,4 +82,15 @@ async function logBalances(app: HelloSwap) {
         parseFloat(await app.getBitcoinBalance()).toFixed(2),
         parseFloat(formatEther(await app.getEtherBalance())).toFixed(2)
     );
+}
+
+function checkEnvFile(path: string) {
+    if (!fs.existsSync(path)) {
+        const logger = createLogger();
+        logger.error(
+            "Could not find %s file. Did you run \\`create-comit-app start-env\\`?",
+            path
+        );
+        process.exit(1);
+    }
 }

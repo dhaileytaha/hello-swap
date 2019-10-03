@@ -59,7 +59,6 @@ export class HelloSwap {
     private readonly cnd: Cnd;
     private actionsDone: string[];
     private readonly interval: NodeJS.Timeout;
-    private offersMade: Offer[];
     private swapsDone: string[];
     private logger: CustomLogger;
 
@@ -76,12 +75,10 @@ export class HelloSwap {
         cndUrl: string,
         public readonly whoAmI: WhoAmI,
         private readonly bitcoinWallet: BitcoinWallet,
-        private readonly ethereumWallet: EthereumWallet,
-        private readonly acceptPredicate: (swap: SimpleSwap) => boolean
+        private readonly ethereumWallet: EthereumWallet
     ) {
         this.cnd = new Cnd(cndUrl);
         this.actionsDone = [];
-        this.offersMade = [];
         this.swapsDone = [];
         this.logger = createLogger();
 
@@ -103,11 +100,11 @@ export class HelloSwap {
                     swaps.forEach(
                         async (swap: EmbeddedRepresentationSubEntity) => {
                             const simpleSwap = HelloSwap.toSwap(swap);
-                            if (this.acceptPredicate(simpleSwap)) {
-                                await this.acceptSwap(simpleSwap);
-                            } else {
-                                await this.declineSwap(simpleSwap);
-                            }
+                            await this.acceptSwap(simpleSwap);
+                            console.log(
+                                `[${whoAmI}] swap accepted:`,
+                                simpleSwap.id
+                            );
                         }
                     );
                 }
@@ -170,8 +167,6 @@ export class HelloSwap {
             makerPeerId: await this.cnd.getPeerId(),
             makerPeerAddress: "/ip4/127.0.0.1/tcp/9940",
         };
-
-        this.offersMade.push(offer);
 
         return offer;
     }
@@ -240,16 +235,6 @@ export class HelloSwap {
         return this.cnd.executeAction(acceptAction!, (field: Field) =>
             this.fieldValueResolver(field)
         );
-    }
-
-    private async declineSwap(swap: SimpleSwap) {
-        const swapDetails = await this.cnd.getSwap(swap.id);
-        const actions = swapDetails.actions;
-        const declineAction = actions!.find(
-            action => action.name === "decline"
-        );
-
-        return this.cnd.executeAction(declineAction!);
     }
 
     private async getNewSwaps(): Promise<EmbeddedRepresentationSubEntity[]> {

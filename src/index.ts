@@ -66,8 +66,7 @@ async function startApp(whoAmI: WhoAmI, index: number) {
         process.env[`HTTP_URL_CND_${index}`]!,
         whoAmI,
         bitcoinWallet,
-        ethereumWallet,
-        () => true
+        ethereumWallet
     );
 
     await logBalances(app);

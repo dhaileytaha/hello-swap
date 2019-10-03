@@ -101,10 +101,6 @@ export class HelloSwap {
                         async (swap: EmbeddedRepresentationSubEntity) => {
                             const simpleSwap = HelloSwap.toSwap(swap);
                             await this.acceptSwap(simpleSwap);
-                            console.log(
-                                `[${whoAmI}] swap accepted:`,
-                                simpleSwap.id
-                            );
                         }
                     );
                 }
@@ -171,7 +167,7 @@ export class HelloSwap {
         return offer;
     }
 
-    public takeOffer({
+    public async takeOffer({
         sellCoin,
         buyCoin,
         makerPeerId,
@@ -209,7 +205,8 @@ export class HelloSwap {
             },
         };
 
-        return this.cnd.postSwap(swap);
+        const id = await this.cnd.postSwap(swap);
+        this.logger.data("associated swap ID: %s", id);
     }
 
     public getBitcoinBalance() {

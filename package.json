@@ -28,7 +28,7 @@
         "typescript": "^3.6.2"
     },
     "dependencies": {
-        "comit-sdk": "^0.3.1",
+        "comit-sdk": "^0.3.2",
         "delay": "^4.3.0",
         "dotenv": "^8.1.0",
         "ethers": "^4.0.37",

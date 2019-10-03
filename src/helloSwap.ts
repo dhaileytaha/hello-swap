@@ -1,5 +1,3 @@
-import changeCase from "change-case";
-import colors from "colors";
 import {
     Action,
     Asset,
@@ -15,6 +13,7 @@ import {
 import { parseEther } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
+import { createLogger, CustomLogger } from "./logger";
 import { Coin, CoinType, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
@@ -25,6 +24,8 @@ export interface SimpleSwap {
     buyAsset: Asset;
     sellAsset: Asset;
 }
+
+export type WhoAmI = "maker" | "taker";
 
 /**
  * The main class of our app. Connects to a cnd, automatically actions available swaps.
@@ -60,18 +61,20 @@ export class HelloSwap {
     private readonly interval: NodeJS.Timeout;
     private offersMade: Offer[];
     private swapsDone: string[];
+    private logger: CustomLogger;
 
     /**
      * new HelloSwap()
      * @param cndUrl The url to cnd REST API
      * @param whoAmI A name for logging purposes only
+     * @param logger
      * @param bitcoinWallet
      * @param ethereumWallet
      * @param acceptPredicate If it returns true the swap is accepted, otherwise it is declined.
      */
     public constructor(
         cndUrl: string,
-        private readonly whoAmI: string,
+        public readonly whoAmI: WhoAmI,
         private readonly bitcoinWallet: BitcoinWallet,
         private readonly ethereumWallet: EthereumWallet,
         private readonly acceptPredicate: (swap: SimpleSwap) => boolean
@@ -80,6 +83,7 @@ export class HelloSwap {
         this.actionsDone = [];
         this.offersMade = [];
         this.swapsDone = [];
+        this.logger = createLogger();
 
         // Store swapped already finished in case of a re-run with same cnd.
         this.getDoneSwaps().then((swaps: EmbeddedRepresentationSubEntity[]) => {
@@ -96,26 +100,13 @@ export class HelloSwap {
         this.interval = setInterval(() => {
             this.getNewSwaps().then(
                 (swaps: EmbeddedRepresentationSubEntity[]) => {
-                    if (swaps.length) {
-                        console.log(
-                            `[${whoAmI}] ${swaps.length} new swap(s) waiting for a decision`
-                        );
-                    }
                     swaps.forEach(
                         async (swap: EmbeddedRepresentationSubEntity) => {
                             const simpleSwap = HelloSwap.toSwap(swap);
                             if (this.acceptPredicate(simpleSwap)) {
                                 await this.acceptSwap(simpleSwap);
-                                console.log(
-                                    `[${whoAmI}] swap accepted:`,
-                                    simpleSwap.id
-                                );
                             } else {
                                 await this.declineSwap(simpleSwap);
-                                console.log(
-                                    `[${whoAmI}] swap declined:`,
-                                    simpleSwap.id
-                                );
                             }
                         }
                     );
@@ -136,8 +127,10 @@ export class HelloSwap {
                         const props = swap.properties!;
                         const id = props.id;
                         if (this.swapsDone.indexOf(props.id) === -1) {
-                            console.log(
-                                `[${this.whoAmI}] Swap finished with status ${props.status}: ${id}`
+                            this.logger[whoAmI](
+                                "Swap finished with status %s: %s",
+                                props.status,
+                                id
                             );
 
                             this.swapsDone.push(id);
@@ -157,17 +150,18 @@ export class HelloSwap {
             sellCoin.coin !== CoinType.Ether ||
             buyCoin.coin !== CoinType.Bitcoin
         ) {
-            throw new Error(
-                `Offering to sell ${JSON.stringify(
-                    sellCoin.coin
-                )} to buy ${JSON.stringify(buyCoin.coin)} is not supported`
+            this.logger.error(
+                "Offer not supported: sell %j, buy %j",
+                sellCoin.coin,
+                buyCoin.coin
             );
+            process.exit(1);
         }
 
-        console.log(
-            `[${this.whoAmI}] Creating offer to sell ${JSON.stringify(
-                sellCoin
-            )} for ${JSON.stringify(buyCoin)}`
+        this.logger[this.whoAmI](
+            "Creating offer: sell %j, buy %j",
+            sellCoin,
+            buyCoin
         );
 
         const offer = {
@@ -188,10 +182,10 @@ export class HelloSwap {
         makerPeerId,
         makerPeerAddress,
     }: Offer) {
-        console.log(
-            `[${this.whoAmI}] Taking offer to buy ${JSON.stringify(
-                buyCoin
-            )} for ${JSON.stringify(sellCoin)}`
+        this.logger[this.whoAmI](
+            "Taking offer: sell %j, buy %j",
+            sellCoin,
+            buyCoin
         );
 
         const swap = {
@@ -221,6 +215,14 @@ export class HelloSwap {
         };
 
         return this.cnd.postSwap(swap);
+    }
+
+    public getBitcoinBalance() {
+        return this.bitcoinWallet.getBalance();
+    }
+
+    public getEtherBalance() {
+        return this.ethereumWallet.getBalance();
     }
 
     /**
@@ -292,8 +294,6 @@ export class HelloSwap {
     private async performNextLedgerAction(
         entity: EmbeddedRepresentationSubEntity
     ) {
-        const swap = HelloSwap.toSwap(entity);
-
         const action = entity.actions!.find((action: Action) => {
             return action.name === "fund" || action.name === "redeem";
         })!;
@@ -309,20 +309,14 @@ export class HelloSwap {
             const stringAction = JSON.stringify(ledgerAction);
             if (this.actionsDone.indexOf(stringAction) === -1) {
                 this.actionsDone.push(stringAction);
-                console.log(
-                    `[${this.whoAmI}] ${changeCase.titleCase(action.name)}ing ${
-                        action.name === "fund"
-                            ? swap.sellAsset.name
-                            : swap.buyAsset.name
-                    } for`,
-                    JSON.stringify(swap.id)
+                this.logger[this.whoAmI](
+                    "Performing %s action for swap %s",
+                    action.name,
+                    HelloSwap.toSwap(entity).id
                 );
                 const res = await this.doLedgerAction(ledgerAction);
                 if (!res) {
-                    console.log(
-                        colors.grey("[trace] Ledger action failed:"),
-                        colors.grey(JSON.stringify(res))
-                    );
+                    this.logger.data("Ledger action failed: %j", res);
                 }
             }
         }
@@ -357,11 +351,9 @@ export class HelloSwap {
                     network
                 );
 
-                console.log(
-                    colors.grey(
-                        "[trace] Bitcoin Broadcast Signed Transaction response:"
-                    ),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    "Bitcoin Broadcast Signed Transaction response: %j",
+                    response
                 );
 
                 return response;
@@ -376,9 +368,9 @@ export class HelloSwap {
                     network
                 );
 
-                console.log(
-                    colors.grey("[trace] Bitcoin Send To Address response:"),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    "Bitcoin Send To Address response: %j",
+                    response
                 );
 
                 return response;
@@ -392,9 +384,9 @@ export class HelloSwap {
                     gas_limit
                 );
 
-                console.log(
-                    colors.grey("[trace] Ethereum Call Contract response:"),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    "Ethereum Call Contract response: %j",
+                    response
                 );
 
                 return response;
@@ -409,9 +401,9 @@ export class HelloSwap {
                     gas_limit
                 );
 
-                console.log(
-                    colors.grey("[trace] Ethereum Deploy Contract response:"),
-                    colors.grey(JSON.stringify(response))
+                this.logger.data(
+                    "Ethereum Deploy Contract response: %j",
+                    response
                 );
 
                 return response;

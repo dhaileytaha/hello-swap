@@ -2,12 +2,9 @@ import minimist from "minimist";
 import winston from "winston";
 
 export interface CustomLogger extends winston.Logger {
-    error: winston.LeveledLogMethod;
     maker: winston.LeveledLogMethod;
     taker: winston.LeveledLogMethod;
-    info: winston.LeveledLogMethod;
     data: winston.LeveledLogMethod;
-    verbose: winston.LeveledLogMethod;
 }
 
 const colorizer = winston.format.colorize({
@@ -16,9 +13,7 @@ const colorizer = winston.format.colorize({
         error: "red",
         maker: "cyan",
         taker: "yellow",
-        info: "purple",
         data: "grey",
-        verbose: "green",
     },
 });
 
@@ -29,14 +24,9 @@ export function createLogger() {
         },
     }).loglevel;
 
-    if (
-        level !== "error" &&
-        level !== "info" &&
-        level !== "data" &&
-        level !== "verbose"
-    ) {
+    if (level !== "info" && level !== "data") {
         throw new Error(
-            `[error] Invalid log level: ${level}. Choose one from "error", "info", "data" or "verbose"`
+            `[error] Invalid log level: ${level}. Choose one from "info" or "data"`
         );
     }
 
@@ -47,7 +37,6 @@ export function createLogger() {
             taker: 1,
             info: 1,
             data: 2,
-            verbose: 3,
         },
         format: winston.format.combine(
             winston.format.simple(),

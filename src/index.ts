@@ -39,8 +39,7 @@ import { OrderBook } from "./orderBook";
 
     process.stdin.resume(); // so the program will not close instantly
 
-    async function exitHandler(exitCode: NodeJS.Signals) {
-        logger.verbose(`Received ${exitCode}, closing...`);
+    async function exitHandler() {
         maker.stop();
         taker.stop();
 

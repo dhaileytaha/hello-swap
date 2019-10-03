@@ -40,6 +40,7 @@ export function createLogger() {
         },
         format: winston.format.combine(
             winston.format.simple(),
+            winston.format.splat(),
             winston.format.printf(msg => {
                 const message =
                     msg.level === "data"

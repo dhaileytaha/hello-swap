@@ -34,7 +34,7 @@ import { OrderBook } from "./orderBook";
         sellCoin: CoinType.Bitcoin,
         buyAmount: 5,
     });
-    logger.taker(`${foundOffers.length} offer(s) found`);
+    logger.taker("%d offer(s) found", foundOffers.length);
     await taker.takeOffer(foundOffers[0]);
 
     process.stdin.resume(); // so the program will not close instantly
@@ -75,7 +75,7 @@ async function startApp(whoAmI: WhoAmI, index: number): Promise<HelloSwap> {
     );
 
     logger[whoAmI]("Started hello-swap");
-    logger.data(`with ID: ${await app.cndPeerId()}`);
+    logger.data("with ID: %s", await app.cndPeerId());
     logBalances(app, logger);
 
     return app;
@@ -93,10 +93,8 @@ function checkForEnvFile() {
 
 async function logBalances(app: HelloSwap, logger: CustomLogger) {
     logger[app.whoAmI](
-        `Bitcoin balance: ${parseFloat(await app.getBitcoinBalance()).toFixed(
-            2
-        )}. Ether balance: ${parseFloat(
-            formatEther(await app.getEtherBalance())
-        ).toFixed(2)}`
+        "Bitcoin balance: %f. Ether balance: %f",
+        parseFloat(await app.getBitcoinBalance()).toFixed(2),
+        parseFloat(formatEther(await app.getEtherBalance())).toFixed(2)
     );
 }

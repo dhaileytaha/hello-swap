@@ -14,7 +14,7 @@ import { parseEther } from "ethers/utils";
 import moment from "moment";
 import { toSatoshi } from "satoshi-bitcoin-ts";
 import { createLogger, CustomLogger } from "./logger";
-import { Coin, CoinType, Offer } from "./orderBook";
+import { Coin, Offer } from "./orderBook";
 
 export { CoinType } from "./orderBook";
 
@@ -139,18 +139,6 @@ export class HelloSwap {
     }
 
     public async createOffer(sellCoin: Coin, buyCoin: Coin): Promise<Offer> {
-        if (
-            sellCoin.coin !== CoinType.Ether ||
-            buyCoin.coin !== CoinType.Bitcoin
-        ) {
-            this.logger.error(
-                "Offer not supported: sell %j, buy %j",
-                sellCoin.coin,
-                buyCoin.coin
-            );
-            process.exit(1);
-        }
-
         this.logger[this.whoAmI](
             "Creating offer: sell %j, buy %j",
             sellCoin,

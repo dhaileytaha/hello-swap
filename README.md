@@ -1,4 +1,4 @@
-# Hello-Swap
+# Hello-Swap in Typescript
 
 Hello-Swap is an example project that shows how to build applications on top of the C( )MIT protocol using TypeScript.
 
